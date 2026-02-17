@@ -8,7 +8,6 @@ import { fetchEmails, updateEmail, getEmailCounts } from "./api/mailApi";
 const FOLDERS = ["Inbox", "Sent", "Flagged"];
 
 function App() {
-  // Theme: load from localStorage, default "light"
   const [theme, setTheme] = useState(() => {
     if (typeof window !== "undefined") {
       const saved = window.localStorage.getItem("mail-theme");
@@ -28,13 +27,11 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState("");
 
-  // Apply theme + persist
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
     window.localStorage.setItem("mail-theme", theme);
   }, [theme]);
 
-  // Load email list whenever folder or search changes
   useEffect(() => {
     let cancelled = false;
 
@@ -52,7 +49,6 @@ function App() {
         if (!cancelled) {
           setEmails(data);
 
-          // If selected email is no longer in list, clear selection
           if (
             selectedEmail &&
             !data.some((email) => email.id === selectedEmail.id)
@@ -79,7 +75,6 @@ function App() {
     };
   }, [currentFolder, searchTerm, selectedEmail]);
 
-  // Load counts for sidebar badges (once at start, and when we change emails)
   async function refreshCounts() {
     try {
       const result = await getEmailCounts();
@@ -93,12 +88,10 @@ function App() {
     refreshCounts();
   }, []);
 
-  // When we update an email (flag/pin/read), re-sync counts
   const handleEmailUpdated = () => {
     refreshCounts();
   };
 
-  // Action handlers (called from EmailList via pages)
   async function handleToggleFlag(email) {
     try {
       const updated = await updateEmail(email.id, {
@@ -109,7 +102,6 @@ function App() {
         prev.map((e) => (e.id === updated.id ? updated : e))
       );
 
-      // If we are in Flagged folder and email is now unflagged, remove it
       if (currentFolder === "Flagged" && !updated.isFlagged) {
         setEmails((prev) => prev.filter((e) => e.id !== updated.id));
         if (selectedEmail && selectedEmail.id === updated.id) {

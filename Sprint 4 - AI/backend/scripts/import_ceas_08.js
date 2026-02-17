@@ -1,5 +1,4 @@
 // backend/scripts/import_ceas_08.js
-// Usage: node scripts/import_ceas_08.js
 
 const fs = require("fs");
 const path = require("path");
@@ -37,7 +36,7 @@ db.serialize(() => {
   fs.createReadStream(ceasPath)
     .pipe(
       csv({
-        separator: ",",            // CEAS_08 is standard CSV
+        separator: ",",
         mapHeaders: ({ header }) => header.trim(),
       })
     )
@@ -64,7 +63,6 @@ db.serialize(() => {
       }
 
       // Rely on column positions:
-      // 0: sender, 3: subject, 4: body, 5: label, 6: urls
       const senderKey = headerKeys[0];
       const subjectKey = headerKeys[3];
       const bodyKey = headerKeys[4];

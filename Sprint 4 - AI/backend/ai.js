@@ -1,29 +1,14 @@
 // backend/ai.js
-//
-// Local ML-powered email classifier that calls the Python model
-// in backend/ml/predict_email.py via child_process.
-//
-// It returns:
-//   {
-//     aiLabel: "phishing" | "benign",
-//     aiScore: number in [0, 1],   // probability of phishing
-//     aiModel: "logreg-ceas08-tfidf",
-//     aiExplanation: string
-//   }
+
 
 const { spawn } = require("child_process");
 const path = require("path");
 
-// On your machine, the venv is backend/.venv, and you used:
-//   .\.venv\Scripts\python.exe .\ml\train_ceas_model.py
-// So we use the same interpreter here:
 const PYTHON_BIN = path.join(__dirname, ".venv", "Scripts", "python.exe");
-// If that ever fails, you could change this to "python" or "py".
 
 const PREDICT_SCRIPT = path.join(__dirname, "ml", "predict_email.py");
 
 /**
- * Low-level: run the Python classifier for one email.
  * @param {{sender: string, subject: string, body: string}} email
  * @returns {Promise<{label: number, score: number}>}
  */
@@ -81,17 +66,14 @@ function runPythonClassifier(email) {
   });
 }
 
-/**
- * Main classifier used by the rest of the backend.
- * Wraps the Python result in the format your API expects.
- */
+
 async function classifyEmailBasic(email) {
   const result = await runPythonClassifier(email);
 
   const aiLabel = result.label === 1 ? "phishing" : "benign";
   let aiScore = typeof result.score === "number" ? result.score : 0.5;
 
-  // Clamp just in case
+
   if (!Number.isFinite(aiScore)) aiScore = 0.5;
   if (aiScore < 0) aiScore = 0;
   if (aiScore > 1) aiScore = 1;
@@ -115,7 +97,6 @@ async function classifyEmailBasic(email) {
   };
 }
 
-// Backwards-compatible names used by server.js
 async function classifyEmailWithAI(email) {
   return classifyEmailBasic(email);
 }

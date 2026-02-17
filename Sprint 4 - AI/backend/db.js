@@ -4,11 +4,9 @@ const path = require("path");
 
 const dbFile = path.join(__dirname, "mail.db");
 
-// Open (or create) the database file
 const db = new sqlite3.Database(dbFile);
 
 db.serialize(() => {
-  // Operational mailbox table (used by the app UI)
   db.run(
     `CREATE TABLE IF NOT EXISTS emails (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -27,7 +25,6 @@ db.serialize(() => {
     )`
   );
 
-  // Corpus of normal (benign) emails for spawning / ML
   db.run(
     `CREATE TABLE IF NOT EXISTS normal_corpus (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -38,7 +35,6 @@ db.serialize(() => {
     )`
   );
 
-  // Corpus of phishing emails for spawning / ML
   db.run(
     `CREATE TABLE IF NOT EXISTS phish_corpus (
       id INTEGER PRIMARY KEY AUTOINCREMENT,

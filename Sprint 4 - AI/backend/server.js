@@ -15,18 +15,14 @@ const {
 const app = express();
 const PORT = 4000;
 
-// Allow frontend to call this API
 app.use(
   cors({
     origin: "http://localhost:5173",
   })
 );
 
-app.use(express.json()); // parse JSON bodies
+app.use(express.json());
 
-/* ---------------
-   Helper: map DB rows to API objects
-   --------------- */
 function mapEmailRow(row) {
   return {
     id: row.id,
@@ -45,9 +41,6 @@ function mapEmailRow(row) {
   };
 }
 
-/* ---------------
-   GET /api/emails
-   --------------- */
 app.get("/api/emails", (req, res) => {
   const folder = req.query.folder || "Inbox";
   const search = (req.query.search || "").trim().toLowerCase();
@@ -81,9 +74,6 @@ app.get("/api/emails", (req, res) => {
   });
 });
 
-/* ---------------
-   GET /api/emails/:id
-   --------------- */
 app.get("/api/emails/:id", (req, res) => {
   const id = req.params.id;
 
@@ -99,9 +89,6 @@ app.get("/api/emails/:id", (req, res) => {
   });
 });
 
-/* ---------------
-   POST /api/emails  (local Sent mail)
-   --------------- */
 app.post("/api/emails", (req, res) => {
   const { sender, subject, body } = req.body || {};
 
@@ -140,9 +127,6 @@ app.post("/api/emails", (req, res) => {
   });
 });
 
-/* ---------------
-   PATCH /api/emails/:id
-   --------------- */
 app.patch("/api/emails/:id", (req, res) => {
   const id = req.params.id;
   const { isUnread, isFlagged, isPinned, folder } = req.body || {};
@@ -195,10 +179,6 @@ app.patch("/api/emails/:id", (req, res) => {
   });
 });
 
-/* ---------------
-   POST /api/dev/spawn-email
-   Body: { type: "normal" | "phish" | "random", count: number }
-   --------------- */
 app.post("/api/dev/spawn-email", (req, res) => {
   const body = req.body || {};
   let { type, count } = body;
@@ -234,14 +214,12 @@ app.post("/api/dev/spawn-email", (req, res) => {
         return callback(new Error(`No emails available in ${corpusTable}`));
       }
 
-      // 1) Call your ML model (Python) to classify this email
       classifyEmailWithAI({
         sender: row.sender,
         subject: row.subject,
         body: row.body || "",
       })
         .then((aiResult) => {
-          // 2) Decide whether to flag based on aiLabel
           const isFlagged = aiResult.aiLabel === "phishing" ? 1 : 0;
 
           const date = new Date().toLocaleString("en-GB", {
@@ -265,9 +243,9 @@ app.post("/api/dev/spawn-email", (req, res) => {
               row.body,
               date,
               groupLabel,
-              isFlagged,         // <-- ML decides this
+              isFlagged,
               urlsFlag,
-              groundTruthLabel,  // from dataset
+              groundTruthLabel,
               corpusTable,
             ],
             function (err2) {
@@ -288,7 +266,6 @@ app.post("/api/dev/spawn-email", (req, res) => {
         .catch((e) => {
           console.error("Error classifying email with ML:", e);
 
-          // Fallback: insert as unflagged if the classifier fails
           const date = new Date().toLocaleString("en-GB", {
             day: "numeric",
             month: "short",
@@ -353,9 +330,7 @@ app.post("/api/dev/spawn-email", (req, res) => {
   runSpawn(0);
 });
 
-/* ---------------
-   DELETE /api/dev/clear-inbox
-   --------------- */
+
 app.delete("/api/dev/clear-inbox", (req, res) => {
   db.run("DELETE FROM emails WHERE folder = 'Inbox'", function (err) {
     if (err) {
@@ -366,9 +341,7 @@ app.delete("/api/dev/clear-inbox", (req, res) => {
   });
 });
 
-/* ---------------
-   DELETE /api/dev/clear-flagged
-   --------------- */
+
 app.delete("/api/dev/clear-flagged", (req, res) => {
   db.run("DELETE FROM emails WHERE isFlagged = 1", function (err) {
     if (err) {
@@ -379,18 +352,7 @@ app.delete("/api/dev/clear-flagged", (req, res) => {
   });
 });
 
-/**
- * POST /api/ai/classify
- * Body: { sender, subject, body, urls?: string[] }
- *
- * Example:
- *   {
- *     "sender": "Bank <alerts@bank.com>",
- *     "subject": "Urgent: verify your account",
- *     "body": "Click this link to keep your account active...",
- *     "urls": ["http://weird-bank-verify.com/login"]
- *   }
- */
+
 app.post("/api/ai/classify", async (req, res) => {
   try {
     const { sender, subject, body, urls } = req.body || {};
@@ -416,9 +378,6 @@ app.post("/api/ai/classify", async (req, res) => {
 });
 
 
-/* ---------------
-   Start server
-   --------------- */
 app.listen(PORT, () => {
   console.log(`Mail API listening on http://localhost:${PORT}`);
 });

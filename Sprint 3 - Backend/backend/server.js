@@ -15,9 +15,6 @@ app.use(
 
 app.use(express.json()); // parse JSON bodies
 
-/* ---------------
-   Helper: map DB rows to API objects
-   --------------- */
 function mapEmailRow(row) {
   return {
     id: row.id,
@@ -35,13 +32,6 @@ function mapEmailRow(row) {
   };
 }
 
-/* ---------------
-   GET /api/emails
-   Query params:
-     folder=Inbox|Sent|...  (default Inbox)
-     search=...             (optional)
-     flaggedOnly=true       (optional; overrides folder)
-   --------------- */
 app.get("/api/emails", (req, res) => {
   const folder = req.query.folder || "Inbox";
   const search = (req.query.search || "").trim().toLowerCase();
@@ -77,9 +67,6 @@ app.get("/api/emails", (req, res) => {
   });
 });
 
-/* ---------------
-   GET /api/emails/:id
-   --------------- */
 app.get("/api/emails/:id", (req, res) => {
   const id = req.params.id;
 
@@ -95,11 +82,6 @@ app.get("/api/emails/:id", (req, res) => {
   });
 });
 
-/* ---------------
-   POST /api/emails
-   Create a new "Sent" email (local only)
-   Body: { sender, subject, body }
-   --------------- */
 app.post("/api/emails", (req, res) => {
   const { sender, subject, body } = req.body || {};
 
@@ -138,11 +120,6 @@ app.post("/api/emails", (req, res) => {
   });
 });
 
-/* ---------------
-   PATCH /api/emails/:id
-   Update flags (isUnread, isFlagged, isPinned) or folder.
-   Body: any combination of { isUnread, isFlagged, isPinned, folder }
-   --------------- */
 app.patch("/api/emails/:id", (req, res) => {
   const id = req.params.id;
   const { isUnread, isFlagged, isPinned, folder } = req.body || {};
@@ -195,18 +172,6 @@ app.patch("/api/emails/:id", (req, res) => {
   });
 });
 
-/* ---------------
-   POST /api/dev/spawn-email
-   Body: { type: "normal" | "phish" | "random", count: number }
-
-   - type = "normal"  => from normal_corpus (benign)
-   - type = "phish"   => from phish_corpus (phishing)
-   - type = "random"  => choose normal/phish randomly each time
-
-   - count: how many emails to insert (default 1)
-
-   Returns an array of created emails.
-   --------------- */
 app.post("/api/dev/spawn-email", (req, res) => {
   const body = req.body || {};
   let { type, count } = body;
@@ -307,10 +272,6 @@ app.post("/api/dev/spawn-email", (req, res) => {
   runSpawn(0);
 });
 
-/* ---------------
-   DELETE /api/dev/clear-inbox
-   - Deletes all emails where folder = 'Inbox'
-   --------------- */
 app.delete("/api/dev/clear-inbox", (req, res) => {
   db.run("DELETE FROM emails WHERE folder = 'Inbox'", function (err) {
     if (err) {
@@ -321,10 +282,6 @@ app.delete("/api/dev/clear-inbox", (req, res) => {
   });
 });
 
-/* ---------------
-   DELETE /api/dev/clear-flagged
-   - Deletes all emails that are currently flagged (isFlagged = 1)
-   --------------- */
 app.delete("/api/dev/clear-flagged", (req, res) => {
   db.run("DELETE FROM emails WHERE isFlagged = 1", function (err) {
     if (err) {
@@ -335,9 +292,6 @@ app.delete("/api/dev/clear-flagged", (req, res) => {
   });
 });
 
-/* ---------------
-   Start server
-   --------------- */
 app.listen(PORT, () => {
   console.log(`Mail API listening on http://localhost:${PORT}`);
 });

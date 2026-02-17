@@ -1,17 +1,10 @@
 # backend/ml/predict_email.py
-#
-# Simple CLI wrapper around your trained CEAS_08 model (phish_model.joblib).
-# It reads JSON from stdin:
-#   { "sender": "...", "subject": "...", "body": "..." }
-# and prints JSON to stdout:
-#   { "label": 0 or 1, "score": float }   # 1 = phishing
 
 import sys
 import json
 from pathlib import Path
 import joblib
 
-# phish_model.joblib should already be here from train_ceas_model
 MODEL_PATH = Path(__file__).with_name("phish_model.joblib")
 _model = None
 
@@ -42,13 +35,13 @@ def main():
   text = f"{sender}\n{subject}\n{body}"
 
   model = get_model()
-  proba = model.predict_proba([text])[0]  # shape (2,)
+  proba = model.predict_proba([text])[0]
 
-  classes = list(model.classes_)  # should be [0, 1]
+  classes = list(model.classes_)
   if 1 in classes:
     phish_idx = classes.index(1)
   else:
-    # fall back if for some reason labels are reversed
+
     phish_idx = 1
 
   score = float(proba[phish_idx])

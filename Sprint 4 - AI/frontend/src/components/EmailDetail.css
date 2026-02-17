@@ -1,7 +1,7 @@
 .email-detail {
-  width: 100%;        /* take full width of the reading pane */
-  max-width: none;    /* remove the 900px cap */
-  margin: 0;          /* no centering margins */
+  width: 100%;
+  max-width: none;
+  margin: 0;
 }
 
 
