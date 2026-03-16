@@ -1,0 +1,52 @@
+.email-detail {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+}
+
+
+.email-detail--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.email-detail-header {
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.email-detail-subject {
+  margin: 0 0 0.35rem 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.email-detail-meta {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.email-detail-from {
+  font-weight: 500;
+  color: var(--text-main);
+}
+
+.email-detail-date {
+  font-size: 0.82rem;
+}
+
+.email-detail-body {
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--text-main);
+  white-space: pre-wrap;
+}
