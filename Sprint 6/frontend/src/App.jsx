@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import Inbox from "./pages/Inbox";
 import Sent from "./pages/Sent";
 import Flagged from "./pages/Flagged";
@@ -20,12 +20,13 @@ function App() {
 
   const [currentFolder, setCurrentFolder] = useState("Inbox");
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedEmail, setSelectedEmail] = useState(null);
-
+  const [selectedEmailId, setSelectedEmailId] = useState(null);
   const [emails, setEmails] = useState([]);
   const [counts, setCounts] = useState({ Inbox: 0, Sent: 0, Flagged: 0 });
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState("");
+
+  const selectedEmail = emails.find((e) => e.id === selectedEmailId) || null;
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
@@ -50,10 +51,10 @@ function App() {
           setEmails(data);
 
           if (
-            selectedEmail &&
-            !data.some((email) => email.id === selectedEmail.id)
+            selectedEmailId !== null &&
+            !data.some((email) => email.id === selectedEmailId)
           ) {
-            setSelectedEmail(null);
+            setSelectedEmailId(null);
           }
         }
       } catch (err) {
@@ -73,7 +74,7 @@ function App() {
     return () => {
       cancelled = true;
     };
-  }, [currentFolder, searchTerm, selectedEmail]);
+  }, [currentFolder, searchTerm, selectedEmailId]);
 
   async function refreshCounts() {
     try {
@@ -92,20 +93,27 @@ function App() {
     refreshCounts();
   };
 
+  const handleSelectEmail = (email) => {
+    setSelectedEmailId(email.id);
+
+    if (email.isUnread) {
+      handleMarkRead(email);
+    }
+  };
+
   async function handleToggleFlag(email) {
     try {
       const updated = await updateEmail(email.id, {
         isFlagged: !email.isFlagged,
       });
 
-      setEmails((prev) =>
-        prev.map((e) => (e.id === updated.id ? updated : e))
-      );
+      setEmails((prev) => prev.map((e) => (e.id === updated.id ? updated : e)));
 
       if (currentFolder === "Flagged" && !updated.isFlagged) {
         setEmails((prev) => prev.filter((e) => e.id !== updated.id));
-        if (selectedEmail && selectedEmail.id === updated.id) {
-          setSelectedEmail(null);
+
+        if (selectedEmailId === updated.id) {
+          setSelectedEmailId(null);
         }
       }
 
@@ -121,9 +129,7 @@ function App() {
         isPinned: !email.isPinned,
       });
 
-      setEmails((prev) =>
-        prev.map((e) => (e.id === updated.id ? updated : e))
-      );
+      setEmails((prev) => prev.map((e) => (e.id === updated.id ? updated : e)));
 
       handleEmailUpdated();
     } catch (err) {
@@ -136,18 +142,14 @@ function App() {
 
     try {
       const updated = await updateEmail(email.id, { isUnread: false });
-      setEmails((prev) =>
-        prev.map((e) => (e.id === updated.id ? updated : e))
-      );
+
+      setEmails((prev) => prev.map((e) => (e.id === updated.id ? updated : e)));
+
       handleEmailUpdated();
     } catch (err) {
       console.error("Failed to mark as read:", err);
     }
   }
-
-  const handleSelectEmail = (email) => {
-    setSelectedEmail(email);
-  };
 
   let CurrentPage = Inbox;
   if (currentFolder === "Sent") CurrentPage = Sent;
@@ -155,7 +157,6 @@ function App() {
 
   return (
     <div className="app-shell">
-      {/* Sidebar */}
       <aside className="sidebar">
         <div className="sidebar-header">
           <span className="sidebar-app-name">Mail</span>
@@ -166,26 +167,26 @@ function App() {
             <button
               key={folder}
               className={
-                "nav-item" +
-                (currentFolder === folder ? " nav-item--active" : "")
+                "nav-item" + (currentFolder === folder ? " nav-item--active" : "")
               }
-              onClick={() => setCurrentFolder(folder)}
+              onClick={() => {
+                setCurrentFolder(folder);
+                setSelectedEmailId(null);
+              }}
             >
               <span className="nav-item-label">{folder}</span>
-              <span className="nav-item-count">
-                {counts[folder] ?? 0}
-              </span>
+              <span className="nav-item-count">{counts[folder] ?? 0}</span>
             </button>
           ))}
         </nav>
       </aside>
 
-      {/* Main area */}
       <main className="main">
         <header className="topbar">
           <div className="topbar-left">
             <h1 className="topbar-title">{currentFolder}</h1>
           </div>
+
           <div className="topbar-right">
             <div className="theme-toggle-group" aria-label="Theme selection">
               <button
@@ -220,20 +221,17 @@ function App() {
           </div>
         </header>
 
-        {/* Content: list on left, reading pane on right */}
         <div className="content">
           <section className="list-pane">
             {loading ? (
               <div style={{ padding: "0.75rem" }}>Loading…</div>
             ) : loadError ? (
-              <div style={{ padding: "0.75rem", color: "red" }}>
-                {loadError}
-              </div>
+              <div style={{ padding: "0.75rem", color: "red" }}>{loadError}</div>
             ) : (
               <CurrentPage
                 emails={emails}
                 onSelectEmail={handleSelectEmail}
-                selectedEmailId={selectedEmail ? selectedEmail.id : null}
+                selectedEmailId={selectedEmailId}
                 onToggleFlag={handleToggleFlag}
                 onTogglePin={handleTogglePin}
                 onMarkRead={handleMarkRead}
