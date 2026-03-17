@@ -20,18 +20,22 @@ pnpm-debug.log*
 **/.env.*
 !.env.example
 
-# --- Local databases / runtime files ---
-**/*.db
+# --- Databases ---
 **/*.sqlite
 **/*.sqlite3
+!backend/mail.db
 
-# --- ML artifacts (often large binaries) ---
+# --- ML artifacts ---
 **/*.joblib
 **/*.pkl
 **/*.onnx
 **/*.h5
 
-# --- OS / editor junk ---
+# --- Logs ---
+logs/
+*.log
+
+# --- OS / editor ---
 .DS_Store
 Thumbs.db
 .vscode/
