@@ -4,6 +4,12 @@
   padding: 0.5rem 0.75rem 1rem;
 }
 
+.email-list {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
+}
 .email-group + .email-group {
   margin-top: 0.75rem;
 }

@@ -2,7 +2,7 @@
 
 This project implements a **local email client with AI-assisted phishing detection**.
 
-The system simulates an email inbox and uses a **machine learning classifier trained on the CEAS_08 dataset** to detect potential phishing emails. Suspicious elements inside emails are also extracted so they can later be highlighted and explained.
+The system simulates an email inbox and uses a **machine learning classifier trained on the CEAS_08 dataset** to detect phishing emails. Suspicious elements within emails are extracted and visually highlighted, with explanations generated using a **local ML model and optional LLM (Gemini)**.
 
 This repository is part of a **University of Plymouth BSc Computer Science final year project**.
 
@@ -24,7 +24,10 @@ Database
 Machine Learning
 - Python
 - scikit-learn
-- CEAS_08 phishing dataset
+- CEAS_08 dataset
+
+AI Explanation
+- Google Gemini API (optional fallback)
 
 Testing
 - Jest
@@ -34,345 +37,175 @@ Testing
 
 # System Architecture
 
+Frontend (React / Vite)  
+↓  
+Backend API (Node.js / Express)  
+↓  
+SQLite Database (mail.db)  
+↓  
+Python ML Classifier (predict_email.py)  
+↓  
+Optional LLM Explanation (Gemini)
 
-Frontend (React / Vite)
-↓
-Backend API (Node.js / Express)
-↓
-SQLite Database (mail.db)
-↓
-Python ML Classifier (predict_email.py)
+The backend processes emails and returns:
 
-
-The backend sends email content to the Python ML classifier which returns:
-
-- `aiLabel` (phishing or benign)
+- `aiLabel` (phishing / benign)
 - `aiScore`
 - `aiExplanation`
-- `findings` (suspicious patterns detected)
+- `findings` (suspicious indicators)
+
+---
+
+# Features (Sprint 7)
+
+- Email inbox simulation
+- Phishing detection using ML model
+- Suspicious content highlighting
+- AI-generated explanations (LLM for phishing only)
+- Separate folders:
+  - Inbox (safe emails)
+  - Flagged (phishing emails)
+- Dashboard with:
+  - total emails
+  - phishing rate
+  - recent flagged emails
+- Education page explaining phishing techniques
+- Scrollable UI and improved styling (light/dark mode)
 
 ---
 
 # Project Structure
 
+```text
+backend/
+  ├── server.js
+  ├── db.js
+  ├── ai.js
+  ├── llm.js
+  ├── mail.db
+  ├── ml/
+  │   ├── predict_email.py
+  │   └── phish_model.joblib
+  ├── scripts/
+  │   └── import_ceas_08.js
+  └── tests/
 
-Sprint 5
-│
-├── backend
-│ ├── server.js
-│ ├── db.js
-│ ├── ai.js
-│ ├── mail.db
-│ │
-│ ├── data
-│ │ └── CEAS_08.csv
-│ │
-│ ├── ml
-│ │ ├── predict_email.py
-│ │ └── phish_model.joblib
-│ │
-│ ├── scripts
-│ │ └── import_ceas_08.js
-│ │
-│ └── tests
-│ ├── ai.test.js
-│ └── server.test.js
-│
-├── frontend
-│ └── React application
-│
-└── README.md
+frontend/
+  └── React application
 
+README.md
+```
 
 ---
 
-# 1. Prerequisites
+# Setup
 
-Install the following software:
+## 1. Install dependencies
 
-- Node.js (LTS recommended)
-- npm
-- Python 3.10+
-- VS Code (recommended)
-
-Check installation:
-
-
-node -v
-npm -v
-python --version
-
-
----
-
-# 2. First Time Setup
-
-Navigate to the project root.
-
-
-cd "Sprint 5"
-
-
----
-
-## Install root dependencies
-
-
+```bash
 npm install
-
-
----
-
-## Install backend dependencies
-
-
-cd backend
-npm install
-
+cd backend && npm install
+cd ../frontend && npm install
+```
 
 ---
 
-## Install frontend dependencies
+## 2. Python setup
 
-
-cd ../frontend
-npm install
-
-
----
-
-# 3. Python Environment Setup (ML Classifier)
-
-The phishing classifier runs in Python.
-
-Create the virtual environment:
-
-
+```bash
 cd backend
 python -m venv .venv
+```
 
-
-Activate it.
+Activate:
 
 Windows:
-
-
-..venv\Scripts\activate
-
+```bash
+.venv\Scripts\activate
+```
 
 Mac/Linux:
-
-
+```bash
 source .venv/bin/activate
+```
 
+Install packages:
 
-Install required Python packages:
-
-
+```bash
 pip install pandas scikit-learn joblib
-
+```
 
 ---
 
-# 4. Import the CEAS Dataset
+## 3. Import dataset
 
-The project uses the **CEAS_08 phishing dataset**.
-
-Import it into the SQLite database:
-
-
+```bash
 node scripts/import_ceas_08.js
-
-
-This populates:
-
-- `normal_corpus`
-- `phish_corpus`
-
-These tables provide the pool of emails used for simulation.
+```
 
 ---
 
-# 5. Running the Application
+## 4. Run the system
 
-Return to the sprint root folder:
-
-
-cd ..
-
-
-Start the application:
-
-
+```bash
 npm run dev
+```
 
-
-This starts:
-
-| Service | Address |
-|-------|--------|
-Backend API | http://localhost:4000 |
-Frontend UI | http://localhost:5173 |
-
-Open the frontend:
-
-
-http://localhost:5173
-
-
-Leave this terminal running.
+- Backend: http://localhost:4000  
+- Frontend: http://localhost:5173  
 
 ---
 
-# 6. Spawning Test Emails
-
-Open a **second terminal** while the app is running.
-
-These commands simulate incoming emails.
-
----
-
-## Spawn a normal email
-
-
-Invoke-RestMethod -Uri "http://localhost:4000/api/dev/spawn-email
-" -Method POST -ContentType "application/json" -Body '{ "type": "normal", "count": 1 }'
-
-
----
-
-## Spawn a phishing email
-
-
-Invoke-RestMethod -Uri "http://localhost:4000/api/dev/spawn-email
-" -Method POST -ContentType "application/json" -Body '{ "type": "phish", "count": 1 }'
-
-
----
-
-## Spawn random emails
-
-
-Invoke-RestMethod -Uri "http://localhost:4000/api/dev/spawn-email
-" -Method POST -ContentType "application/json" -Body '{ "type": "random", "count": 5 }'
-
-
-Refresh the UI to see the emails appear in the inbox.
-
----
-
-# 7. Clearing Emails
-
-Clear inbox:
-
-
-Invoke-RestMethod -Uri "http://localhost:4000/api/dev/clear-inbox
-" -Method DELETE
-
-
-Clear flagged emails:
-
-
-Invoke-RestMethod -Uri "http://localhost:4000/api/dev/clear-flagged
-" -Method DELETE
-
-
----
-
-# 8. Running Automated Tests
-
-Backend tests verify:
-
-- suspicious phrase detection
-- suspicious link detection
-- API endpoints
-- email creation and retrieval
-
-Run tests:
-
-
-cd backend
-npm test
-
-
-Expected output:
-
-
-Test Suites: 2 passed
-Tests: 8 passed
-
-
----
-
-# 9. Example Demo Workflow
-
-Start the system:
-
-
-npm run dev
-
+# API Testing
 
 Spawn emails:
 
-
-Invoke-RestMethod -Uri "http://localhost:4000/api/dev/spawn-email
-" -Method POST -Body '{"type":"random","count":5}'
-
-
-Open the frontend:
-
-
-http://localhost:5173
-
-
-Observe:
-
-- emails appear in the inbox
-- phishing emails are flagged
-- benign emails remain unflagged
+```powershell
+Invoke-RestMethod -Uri "http://localhost:4000/api/dev/spawn-email" `
+-Method POST -ContentType "application/json" `
+-Body '{ "type": "random", "count": 5 }'
+```
 
 ---
 
-# 10. Troubleshooting
+# Testing
 
-## Python not found
-
-Ensure Python is installed and available in PATH.
-
----
-
-## Model not loading
-
-Check the file exists:
-
-
-backend/ml/phish_model.joblib
-
+```bash
+cd backend
+npm test
+```
 
 ---
 
-## Database empty
+# Current System Behaviour
 
-Run the dataset importer:
-
-
-node scripts/import_ceas_08.js
-
-
----
-
-## Backend fails to start
-
-Ensure port `4000` is free.
+- Safe emails → Inbox  
+- Phishing emails → Flagged  
+- Suspicious text is highlighted  
+- LLM explanations are generated **only for phishing emails**  
+- Fallback to local explanation if LLM fails or quota exceeded  
 
 ---
 
-# 11. Future Improvements
+# Future Work
 
-- frontend highlighting of suspicious text
-- LLM explanation of phishing indicators
-- improved ML model accuracy
-- asynchronous inference pipeline
+## Sprint 8 – Email Client Features
+- Compose email
+- Send / Save draft
+- Reply / Forward
+- Delete and restore emails
+- Move emails between folders
+- Outlook-style toolbar
+
+## Sprint 9 – Testing & Evaluation
+- Functional test cases
+- Integration testing
+- Usability testing
+
+## Sprint 10 – Real Email Integration
+- Google OAuth login
+- Gmail API integration
+- Analyse real inbox emails
 
 ---
 

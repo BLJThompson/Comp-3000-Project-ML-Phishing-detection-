@@ -123,7 +123,7 @@ app.get("/api/emails", (req, res) => {
   const params = [];
 
   if (flaggedOnly) {
-    sql = "SELECT * FROM emails WHERE isFlagged = 1";
+    sql = "SELECT * FROM emails WHERE folder = 'Flagged'";
   } else {
     sql = "SELECT * FROM emails WHERE folder = ?";
     params.push(folder);
@@ -185,16 +185,18 @@ app.post("/api/emails", async (req, res) => {
       console.error("AI classification failed for sent email:", aiErr);
     }
 
+    const isPhishing = aiResult?.aiLabel === "phishing";
+
     insertEmail(
       {
-        folder: "Sent",
+        folder: isPhishing ? "Flagged" : "Sent",
         sender,
         subject,
         body: body || "",
         date: getNowDateString(),
         groupLabel: "Today",
         isUnread: false,
-        isFlagged: aiResult?.aiLabel === "phishing",
+        isFlagged: isPhishing,
         isPinned: false,
         urls: 0,
         groundTruthLabel: null,
@@ -232,19 +234,29 @@ app.patch("/api/emails/:id", (req, res) => {
     params.push(isUnread ? 1 : 0);
   }
 
-  if (typeof isFlagged === "boolean") {
-    fields.push("isFlagged = ?");
-    params.push(isFlagged ? 1 : 0);
-  }
-
   if (typeof isPinned === "boolean") {
     fields.push("isPinned = ?");
     params.push(isPinned ? 1 : 0);
   }
 
-  if (typeof folder === "string" && folder.trim()) {
+  if (typeof isFlagged === "boolean") {
+    fields.push("isFlagged = ?");
+    params.push(isFlagged ? 1 : 0);
+
     fields.push("folder = ?");
-    params.push(folder.trim());
+    params.push(isFlagged ? "Flagged" : "Inbox");
+  } else if (typeof folder === "string" && folder.trim()) {
+    const trimmedFolder = folder.trim();
+    fields.push("folder = ?");
+    params.push(trimmedFolder);
+
+    if (trimmedFolder === "Flagged") {
+      fields.push("isFlagged = ?");
+      params.push(1);
+    } else if (trimmedFolder === "Inbox" || trimmedFolder === "Sent") {
+      fields.push("isFlagged = ?");
+      params.push(0);
+    }
   }
 
   if (fields.length === 0) {
@@ -322,16 +334,18 @@ app.post("/api/dev/spawn-email", (req, res) => {
         console.error("Error classifying email with ML:", aiErr);
       }
 
+      const isPhishing = aiResult?.aiLabel === "phishing";
+
       insertEmail(
         {
-          folder: "Inbox",
+          folder: isPhishing ? "Flagged" : "Inbox",
           sender: row.sender,
           subject: row.subject,
           body: row.body || "",
           date: getNowDateString(),
           groupLabel: "Today",
           isUnread: true,
-          isFlagged: aiResult?.aiLabel === "phishing",
+          isFlagged: isPhishing,
           isPinned: false,
           urls: row.urls || 0,
           groundTruthLabel,
@@ -384,7 +398,7 @@ app.delete("/api/dev/clear-inbox", (req, res) => {
 });
 
 app.delete("/api/dev/clear-flagged", (req, res) => {
-  db.run("DELETE FROM emails WHERE isFlagged = 1", function (err) {
+  db.run("DELETE FROM emails WHERE folder = 'Flagged'", function (err) {
     if (err) {
       console.error("Error clearing flagged emails:", err);
       return res.status(500).json({ error: "Failed to clear flagged emails" });
