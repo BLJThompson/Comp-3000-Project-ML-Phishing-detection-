@@ -1,0 +1,37 @@
+.top-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border-subtle, #e5e7eb);
+  background: var(--bg-row, #f8fafc);
+  flex-wrap: wrap;
+}
+
+.top-toolbar button,
+.top-toolbar select {
+  border: 1px solid var(--border-subtle, #d1d5db);
+  background: white;
+  color: #111827;
+  padding: 0.45rem 0.75rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+}
+
+.top-toolbar button:disabled,
+.top-toolbar select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+[data-theme="dark"] .top-toolbar {
+  background: #111827;
+  border-bottom-color: #374151;
+}
+
+[data-theme="dark"] .top-toolbar button,
+[data-theme="dark"] .top-toolbar select {
+  background: #1f2937;
+  color: #f9fafb;
+  border-color: #374151;
+}
