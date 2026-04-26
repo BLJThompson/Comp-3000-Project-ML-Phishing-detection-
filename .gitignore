@@ -23,7 +23,7 @@ pnpm-debug.log*
 # --- Databases ---
 **/*.sqlite
 **/*.sqlite3
-!backend/mail.db
+**/mail.db
 
 # --- ML artifacts ---
 **/*.joblib
@@ -40,3 +40,7 @@ logs/
 Thumbs.db
 .vscode/
 .idea/
+
+# Google Gmail API private files
+Sprint 10/backend/google/credentials.json
+Sprint 10/backend/google/token.json
