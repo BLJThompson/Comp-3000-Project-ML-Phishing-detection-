@@ -5,6 +5,7 @@ const MOVE_FOLDERS = ["Inbox", "Flagged", "Junk"];
 
 function TopToolbar({
   selectedEmail,
+  selectedCount = 0,
   currentSection,
   onNewEmail,
   onDelete,
@@ -20,19 +21,20 @@ function TopToolbar({
   const hasSelection = !!selectedEmail;
   const inDeleted = currentSection === "Deleted";
   const inDrafts = currentSection === "Drafts";
-  const canReplyOrForward = hasSelection && !inDrafts && !inDeleted;
+  const canReplyOrForward = hasSelection && selectedCount <= 1 && !inDrafts && !inDeleted;
   const canMove = hasSelection && !inDeleted;
   const deleteLabel = inDeleted ? "Delete Permanently" : "Delete";
 
-  function handleMoveChange(e) {
-    const value = e.target.value;
+  function handleMoveChange(event) {
+    const value = event.target.value;
+
     if (!value) return;
 
     if (typeof onMove === "function") {
       onMove(value);
     }
 
-    e.target.value = "";
+    event.target.value = "";
   }
 
   return (
@@ -108,6 +110,7 @@ function TopToolbar({
           aria-label="Move selected email"
         >
           <option value="">Move To</option>
+
           {MOVE_FOLDERS.map((folder) => (
             <option key={folder} value={folder}>
               {folder}
@@ -117,6 +120,12 @@ function TopToolbar({
       </div>
 
       <div className="top-toolbar-group top-toolbar-group--right">
+        {selectedCount > 0 && (
+          <span className="top-toolbar-selection-count">
+            {selectedCount} selected
+          </span>
+        )}
+
         {onRefresh && (
           <button
             type="button"
@@ -132,7 +141,7 @@ function TopToolbar({
           type="button"
           className="top-toolbar-btn"
           onClick={onPrint}
-          disabled={!hasSelection}
+          disabled={!hasSelection || selectedCount > 1}
           title="Print selected email only"
         >
           Print

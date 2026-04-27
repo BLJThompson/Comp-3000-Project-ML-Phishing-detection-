@@ -38,12 +38,14 @@ function App() {
       const saved = window.localStorage.getItem("mail-theme");
       if (saved === "light" || saved === "dark") return saved;
     }
+
     return "light";
   });
 
   const [currentSection, setCurrentSection] = useState("Inbox");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedEmailId, setSelectedEmailId] = useState(null);
+  const [selectedEmailIds, setSelectedEmailIds] = useState([]);
   const [selectedThread, setSelectedThread] = useState([]);
   const [emails, setEmails] = useState([]);
   const [counts, setCounts] = useState({});
@@ -59,12 +61,25 @@ function App() {
   const [gmailImporting, setGmailImporting] = useState(false);
   const [lastGmailImport, setLastGmailImport] = useState(null);
 
+  const isMailSection = MAIL_FOLDERS.includes(currentSection);
+
   const selectedEmail = useMemo(
-    () => emails.find((e) => e.id === selectedEmailId) || null,
+    () => emails.find((email) => email.id === selectedEmailId) || null,
     [emails, selectedEmailId]
   );
 
-  const isMailSection = MAIL_FOLDERS.includes(currentSection);
+  const selectedEmails = useMemo(
+    () => emails.filter((email) => selectedEmailIds.includes(email.id)),
+    [emails, selectedEmailIds]
+  );
+
+  const actionEmails = selectedEmails.length > 0
+    ? selectedEmails
+    : selectedEmail
+      ? [selectedEmail]
+      : [];
+
+  const toolbarSelectedEmail = actionEmails[0] || null;
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
@@ -73,59 +88,38 @@ function App() {
 
   useEffect(() => {
     if (!toastMessage) return;
+
     const timer = setTimeout(() => setToastMessage(""), 2200);
     return () => clearTimeout(timer);
   }, [toastMessage]);
 
   useEffect(() => {
-    function handleKeyDown(e) {
-      if (e.key === "Delete" && selectedEmail && currentSection !== "Deleted") {
+    function handleKeyDown(event) {
+      if (
+        event.key === "Delete" &&
+        actionEmails.length > 0 &&
+        currentSection !== "Deleted"
+      ) {
         handleDelete();
       }
     }
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selectedEmail, currentSection]);
+  }, [actionEmails, currentSection]);
 
-  async function refreshCounts() {
-    try {
-      const result = await fetchFolderCounts();
-      setCounts(result);
-      return result;
-    } catch (err) {
-      console.error("Failed to load counts:", err);
-      return {};
+  useEffect(() => {
+    const visibleEmailIds = new Set(emails.map((email) => email.id));
+
+    setSelectedEmailIds((previousIds) =>
+      previousIds.filter((id) => visibleEmailIds.has(id))
+    );
+
+    if (selectedEmailId !== null && !visibleEmailIds.has(selectedEmailId)) {
+      setSelectedEmailId(null);
+      setSelectedThread([]);
     }
-  }
-
-  async function loadDashboardData() {
-    try {
-      const [flaggedEmails, junkEmails] = await Promise.all([
-        fetchEmails({ folder: "Flagged" }),
-        fetchEmails({ folder: "Junk" }),
-      ]);
-
-      setDashboardData({
-        flaggedEmails,
-        junkEmails,
-        suspiciousEmails: [...flaggedEmails, ...junkEmails],
-      });
-    } catch (err) {
-      console.error("Failed to load dashboard data:", err);
-    }
-  }
-
-  async function refreshCurrentFolder() {
-    if (!MAIL_FOLDERS.includes(currentSection)) return;
-
-    const [emailData] = await Promise.all([
-      fetchEmails({ folder: currentSection, searchTerm }),
-      refreshCounts(),
-    ]);
-
-    setEmails(emailData);
-  }
+  }, [emails, selectedEmailId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -137,37 +131,34 @@ function App() {
       try {
         if (currentSection === "Dashboard") {
           await Promise.all([refreshCounts(), loadDashboardData()]);
+
           if (!cancelled) {
+            clearSelection();
             setEmails([]);
-            setSelectedEmailId(null);
-            setSelectedThread([]);
-          }
-        } else if (currentSection === "Education") {
-          if (!cancelled) {
-            setEmails([]);
-            setSelectedEmailId(null);
-            setSelectedThread([]);
-          }
-        } else {
-          const data = await fetchEmails({
-            folder: currentSection,
-            searchTerm,
-          });
-
-          if (!cancelled) {
-            setEmails(data);
-
-            if (
-              selectedEmailId !== null &&
-              !data.some((email) => email.id === selectedEmailId)
-            ) {
-              setSelectedEmailId(null);
-              setSelectedThread([]);
-            }
           }
 
-          await refreshCounts();
+          return;
         }
+
+        if (currentSection === "Education") {
+          if (!cancelled) {
+            clearSelection();
+            setEmails([]);
+          }
+
+          return;
+        }
+
+        const data = await fetchEmails({
+          folder: currentSection,
+          searchTerm,
+        });
+
+        if (!cancelled) {
+          setEmails(data);
+        }
+
+        await refreshCounts();
       } catch (err) {
         if (!cancelled) {
           console.error(err);
@@ -185,7 +176,7 @@ function App() {
     return () => {
       cancelled = true;
     };
-  }, [currentSection, searchTerm, selectedEmailId]);
+  }, [currentSection, searchTerm]);
 
   useEffect(() => {
     if (!MAIL_FOLDERS.includes(currentSection)) return;
@@ -247,10 +238,15 @@ function App() {
           );
         });
 
-        if (!cancelled) setSelectedThread(dedupedThread);
+        if (!cancelled) {
+          setSelectedThread(dedupedThread);
+        }
       } catch (err) {
         console.error("Failed to load thread:", err);
-        if (!cancelled) setSelectedThread([]);
+
+        if (!cancelled) {
+          setSelectedThread([]);
+        }
       }
     }
 
@@ -260,6 +256,82 @@ function App() {
       cancelled = true;
     };
   }, [selectedEmailId]);
+
+  function clearSelection() {
+    setSelectedEmailId(null);
+    setSelectedEmailIds([]);
+    setSelectedThread([]);
+  }
+
+  function handleToggleSelectedEmail(email) {
+    setSelectedEmailIds((previousIds) => {
+      if (previousIds.includes(email.id)) {
+        return previousIds.filter((id) => id !== email.id);
+      }
+
+      return [...previousIds, email.id];
+    });
+  }
+
+  function handleToggleSelectAll() {
+    const visibleEmailIds = emails.map((email) => email.id);
+
+    if (visibleEmailIds.length === 0) return;
+
+    const allVisibleSelected = visibleEmailIds.every((id) =>
+      selectedEmailIds.includes(id)
+    );
+
+    if (allVisibleSelected) {
+      setSelectedEmailIds((previousIds) =>
+        previousIds.filter((id) => !visibleEmailIds.includes(id))
+      );
+      return;
+    }
+
+    setSelectedEmailIds((previousIds) =>
+      Array.from(new Set([...previousIds, ...visibleEmailIds]))
+    );
+  }
+
+  async function refreshCounts() {
+    try {
+      const result = await fetchFolderCounts();
+      setCounts(result);
+      return result;
+    } catch (err) {
+      console.error("Failed to load counts:", err);
+      return {};
+    }
+  }
+
+  async function loadDashboardData() {
+    try {
+      const [flaggedEmails, junkEmails] = await Promise.all([
+        fetchEmails({ folder: "Flagged" }),
+        fetchEmails({ folder: "Junk" }),
+      ]);
+
+      setDashboardData({
+        flaggedEmails,
+        junkEmails,
+        suspiciousEmails: [...flaggedEmails, ...junkEmails],
+      });
+    } catch (err) {
+      console.error("Failed to load dashboard data:", err);
+    }
+  }
+
+  async function refreshCurrentFolder() {
+    if (!MAIL_FOLDERS.includes(currentSection)) return;
+
+    const [emailData] = await Promise.all([
+      fetchEmails({ folder: currentSection, searchTerm }),
+      refreshCounts(),
+    ]);
+
+    setEmails(emailData);
+  }
 
   function openNewEmail() {
     setComposeMode("new");
@@ -274,36 +346,38 @@ function App() {
   }
 
   function openReply() {
-    if (!selectedEmail) return;
+    if (!toolbarSelectedEmail) return;
 
     setComposeMode("reply");
     setComposeInitialData({
       sender: GMAIL_SENDER,
-      toRecipients: selectedEmail.sender || "",
-      subject: selectedEmail.subject?.startsWith("Re:")
-        ? selectedEmail.subject
-        : `Re: ${selectedEmail.subject || ""}`,
-      body: `\n\n--- Original Message ---\n${selectedEmail.body || ""}`,
-      replyToId: selectedEmail.id,
-      threadId: selectedEmail.threadId || `thread-${selectedEmail.id}`,
+      toRecipients: toolbarSelectedEmail.sender || "",
+      subject: toolbarSelectedEmail.subject?.startsWith("Re:")
+        ? toolbarSelectedEmail.subject
+        : `Re: ${toolbarSelectedEmail.subject || ""}`,
+      body: `\n\n--- Original Message ---\n${toolbarSelectedEmail.body || ""}`,
+      replyToId: toolbarSelectedEmail.id,
+      threadId: toolbarSelectedEmail.threadId || `thread-${toolbarSelectedEmail.id}`,
     });
     setComposeOpen(true);
   }
 
   function openForward() {
-    if (!selectedEmail) return;
+    if (!toolbarSelectedEmail) return;
 
     setComposeMode("forward");
     setComposeInitialData({
       sender: GMAIL_SENDER,
       toRecipients: "",
-      subject: selectedEmail.subject?.startsWith("Fw:")
-        ? selectedEmail.subject
-        : `Fw: ${selectedEmail.subject || ""}`,
+      subject: toolbarSelectedEmail.subject?.startsWith("Fw:")
+        ? toolbarSelectedEmail.subject
+        : `Fw: ${toolbarSelectedEmail.subject || ""}`,
       body: `\n\n--- Forwarded Message ---\nFrom: ${
-        selectedEmail.sender || ""
-      }\nSubject: ${selectedEmail.subject || ""}\n\n${selectedEmail.body || ""}`,
-      threadId: selectedEmail.threadId || `thread-${selectedEmail.id}`,
+        toolbarSelectedEmail.sender || ""
+      }\nSubject: ${toolbarSelectedEmail.subject || ""}\n\n${
+        toolbarSelectedEmail.body || ""
+      }`,
+      threadId: toolbarSelectedEmail.threadId || `thread-${toolbarSelectedEmail.id}`,
     });
     setComposeOpen(true);
   }
@@ -319,7 +393,7 @@ function App() {
       }
 
       setCurrentSection("Drafts");
-      setSelectedEmailId(null);
+      clearSelection();
 
       return true;
     } catch (err) {
@@ -338,8 +412,7 @@ function App() {
       });
 
       setCurrentSection("Sent");
-      setSelectedEmailId(null);
-      setSelectedThread([]);
+      clearSelection();
 
       await refreshCurrentFolder();
       await refreshCounts();
@@ -386,31 +459,42 @@ function App() {
       }
     } catch (err) {
       console.error("Failed to import Gmail emails:", err);
-      if (!silent) setToastMessage("Failed to import Gmail emails");
+
+      if (!silent) {
+        setToastMessage("Failed to import Gmail emails");
+      }
     } finally {
       setGmailImporting(false);
     }
   }
 
   async function handleDelete() {
-    if (!selectedEmail) return;
+    if (actionEmails.length === 0) return;
 
     if (currentSection === "Deleted") {
-      const ok = window.confirm("Permanently delete this email?");
+      const ok = window.confirm(
+        actionEmails.length === 1
+          ? "Permanently delete this email?"
+          : `Permanently delete ${actionEmails.length} emails?`
+      );
+
       if (!ok) return;
     }
 
     try {
-      await deleteEmailApi(selectedEmail.id);
+      await Promise.all(actionEmails.map((email) => deleteEmailApi(email.id)));
 
       setToastMessage(
         currentSection === "Deleted"
-          ? "Email permanently deleted"
-          : "Email deleted"
+          ? actionEmails.length === 1
+            ? "Email permanently deleted"
+            : `${actionEmails.length} emails permanently deleted`
+          : actionEmails.length === 1
+            ? "Email deleted"
+            : `${actionEmails.length} emails deleted`
       );
 
-      setSelectedEmailId(null);
-      setSelectedThread([]);
+      clearSelection();
       await refreshCurrentFolder();
     } catch (err) {
       console.error("Failed to delete email:", err);
@@ -419,13 +503,18 @@ function App() {
   }
 
   async function handleRestore() {
-    if (!selectedEmail) return;
+    if (actionEmails.length === 0) return;
 
     try {
-      await restoreEmailApi(selectedEmail.id);
-      setToastMessage("Email restored");
-      setSelectedEmailId(null);
-      setSelectedThread([]);
+      await Promise.all(actionEmails.map((email) => restoreEmailApi(email.id)));
+
+      setToastMessage(
+        actionEmails.length === 1
+          ? "Email restored"
+          : `${actionEmails.length} emails restored`
+      );
+
+      clearSelection();
       await refreshCurrentFolder();
     } catch (err) {
       console.error("Failed to restore email:", err);
@@ -444,8 +533,11 @@ function App() {
       );
 
       if (selectedEmailId === email.id) {
-        setSelectedEmailId(null);
-        setSelectedThread([]);
+        clearSelection();
+      } else {
+        setSelectedEmailIds((previousIds) =>
+          previousIds.filter((id) => id !== email.id)
+        );
       }
 
       await refreshCurrentFolder();
@@ -461,13 +553,18 @@ function App() {
       return;
     }
 
-    if (!selectedEmail) return;
+    if (actionEmails.length === 0) return;
 
     try {
-      await moveEmail(selectedEmail.id, folder);
-      setToastMessage(`Moved to ${folder}`);
-      setSelectedEmailId(null);
-      setSelectedThread([]);
+      await Promise.all(actionEmails.map((email) => moveEmail(email.id, folder)));
+
+      setToastMessage(
+        actionEmails.length === 1
+          ? `Moved to ${folder}`
+          : `${actionEmails.length} emails moved to ${folder}`
+      );
+
+      clearSelection();
       await refreshCurrentFolder();
     } catch (err) {
       console.error("Failed to move email:", err);
@@ -481,7 +578,11 @@ function App() {
         isFlagged: !email.isFlagged,
       });
 
-      setEmails((prev) => prev.map((e) => (e.id === updated.id ? updated : e)));
+      setEmails((previousEmails) =>
+        previousEmails.map((existingEmail) =>
+          existingEmail.id === updated.id ? updated : existingEmail
+        )
+      );
     } catch (err) {
       console.error("Failed to toggle flag:", err);
     }
@@ -493,7 +594,11 @@ function App() {
         isPinned: !email.isPinned,
       });
 
-      setEmails((prev) => prev.map((e) => (e.id === updated.id ? updated : e)));
+      setEmails((previousEmails) =>
+        previousEmails.map((existingEmail) =>
+          existingEmail.id === updated.id ? updated : existingEmail
+        )
+      );
     } catch (err) {
       console.error("Failed to toggle pin:", err);
     }
@@ -504,7 +609,12 @@ function App() {
 
     try {
       const updated = await updateEmail(email.id, { isUnread: false });
-      setEmails((prev) => prev.map((e) => (e.id === updated.id ? updated : e)));
+
+      setEmails((previousEmails) =>
+        previousEmails.map((existingEmail) =>
+          existingEmail.id === updated.id ? updated : existingEmail
+        )
+      );
     } catch (err) {
       console.error("Failed to mark as read:", err);
     }
@@ -520,16 +630,16 @@ function App() {
   }
 
   function handlePrint() {
-    if (!selectedEmail) {
+    if (!toolbarSelectedEmail) {
       setToastMessage("Select an email before printing");
       return;
     }
 
     const verdict =
-      selectedEmail.aiLabel && selectedEmail.aiLabel !== "unknown"
-        ? `${selectedEmail.aiLabel} ${
-            typeof selectedEmail.aiScore === "number"
-              ? `(${Math.round(selectedEmail.aiScore * 100)}%)`
+      toolbarSelectedEmail.aiLabel && toolbarSelectedEmail.aiLabel !== "unknown"
+        ? `${toolbarSelectedEmail.aiLabel} ${
+            typeof toolbarSelectedEmail.aiScore === "number"
+              ? `(${Math.round(toolbarSelectedEmail.aiScore * 100)}%)`
               : ""
           }`
         : "Not analysed";
@@ -544,7 +654,7 @@ function App() {
     printWindow.document.write(`<!doctype html>
 <html>
 <head>
-  <title>${escapeHtml(selectedEmail.subject || "Email")}</title>
+  <title>${escapeHtml(toolbarSelectedEmail.subject || "Email")}</title>
   <style>
     body { font-family: Arial, sans-serif; color: #111827; margin: 40px auto; max-width: 760px; line-height: 1.5; }
     h1 { font-size: 24px; margin: 0 0 14px; border-bottom: 1px solid #d1d5db; padding-bottom: 12px; }
@@ -556,20 +666,21 @@ function App() {
   </style>
 </head>
 <body>
-  <h1>${escapeHtml(selectedEmail.subject || "(No subject)")}</h1>
+  <h1>${escapeHtml(toolbarSelectedEmail.subject || "(No subject)")}</h1>
   <div class="meta">
-    <div><strong>From:</strong> ${escapeHtml(selectedEmail.sender || "")}</div>
-    <div><strong>To:</strong> ${escapeHtml(selectedEmail.toRecipients || "")}</div>
-    <div><strong>Date:</strong> ${escapeHtml(selectedEmail.date || "")}</div>
+    <div><strong>From:</strong> ${escapeHtml(toolbarSelectedEmail.sender || "")}</div>
+    <div><strong>To:</strong> ${escapeHtml(toolbarSelectedEmail.toRecipients || "")}</div>
+    <div><strong>Date:</strong> ${escapeHtml(toolbarSelectedEmail.date || "")}</div>
   </div>
   <div class="label"><strong>AI result:</strong> ${escapeHtml(verdict)}</div>
   <h2>Email body</h2>
-  <pre>${escapeHtml(selectedEmail.body || "")}</pre>
+  <pre>${escapeHtml(toolbarSelectedEmail.body || "")}</pre>
 </body>
 </html>`);
 
     printWindow.document.close();
     printWindow.focus();
+
     setTimeout(() => {
       printWindow.print();
       printWindow.close();
@@ -588,6 +699,9 @@ function App() {
     const commonProps = {
       emails,
       selectedEmailId,
+      selectedEmailIds,
+      onToggleSelectedEmail: handleToggleSelectedEmail,
+      onToggleSelectAll: handleToggleSelectAll,
       onSelectEmail: (email) => {
         if (currentSection === "Drafts") {
           openDraftEditor(email);
@@ -633,16 +747,17 @@ function App() {
             <button
               key={section}
               className={
-                "nav-item" + (currentSection === section ? " nav-item--active" : "")
+                "nav-item" +
+                (currentSection === section ? " nav-item--active" : "")
               }
               onClick={() => {
                 setCurrentSection(section);
                 setSearchTerm("");
-                setSelectedEmailId(null);
-                setSelectedThread([]);
+                clearSelection();
               }}
             >
               <span className="nav-item-label">{section}</span>
+
               {MAIL_FOLDERS.includes(section) && (
                 <span className="nav-item-count">{counts[section] || 0}</span>
               )}
@@ -678,6 +793,7 @@ function App() {
                 >
                   Light
                 </button>
+
                 <button
                   type="button"
                   className={
@@ -697,7 +813,7 @@ function App() {
                 className="search-input"
                 placeholder="Search mail"
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(event) => setSearchTerm(event.target.value)}
               />
             )}
           </div>
@@ -705,7 +821,8 @@ function App() {
 
         {isMailSection && (
           <TopToolbar
-            selectedEmail={selectedEmail}
+            selectedEmail={toolbarSelectedEmail}
+            selectedCount={actionEmails.length}
             currentSection={currentSection}
             onNewEmail={openNewEmail}
             onDelete={handleDelete}
@@ -745,6 +862,7 @@ function App() {
         ) : (
           <div className="content">
             <section className="list-pane">{renderPage()}</section>
+
             <section className="reading-pane">
               <EmailDetail email={selectedEmail} threadEmails={selectedThread} />
             </section>
@@ -760,10 +878,7 @@ function App() {
           onSend={handleSend}
         />
 
-        <HelpModal
-          isOpen={helpOpen}
-          onClose={() => setHelpOpen(false)}
-        />
+        <HelpModal isOpen={helpOpen} onClose={() => setHelpOpen(false)} />
 
         <Toast message={toastMessage} />
       </main>

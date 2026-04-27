@@ -28,23 +28,38 @@ function EmailList({
     [selectedEmailIds]
   );
 
-  const allSelected = emails.length > 0 && selectedEmailIds.length === emails.length;
-  const someSelected = selectedEmailIds.length > 0 && !allSelected;
+  const visibleEmailIds = useMemo(
+    () => emails.map((email) => email.id),
+    [emails]
+  );
+
+  const visibleSelectedCount = useMemo(
+    () => visibleEmailIds.filter((id) => selectedSet.has(id)).length,
+    [visibleEmailIds, selectedSet]
+  );
+
+  const allSelected =
+    visibleEmailIds.length > 0 && visibleSelectedCount === visibleEmailIds.length;
+
+  const someSelected = visibleSelectedCount > 0 && !allSelected;
 
   const grouped = useMemo(() => {
     const groupsMap = {};
 
     emails.forEach((email) => {
       const groupName = email.group || "Other";
+
       if (!groupsMap[groupName]) {
         groupsMap[groupName] = [];
       }
+
       groupsMap[groupName].push(email);
     });
 
-    const orderedNames = GROUP_ORDER.filter((g) => groupsMap[g]);
+    const orderedNames = GROUP_ORDER.filter((groupName) => groupsMap[groupName]);
+
     const otherNames = Object.keys(groupsMap).filter(
-      (g) => !GROUP_ORDER.includes(g)
+      (groupName) => !GROUP_ORDER.includes(groupName)
     );
 
     return [...orderedNames, ...otherNames].map((name) => ({
@@ -59,20 +74,29 @@ function EmailList({
 
   return (
     <section className="email-list">
-      <div className="email-select-all">
+      <label className="email-select-all">
         <input
           type="checkbox"
           checked={allSelected}
           ref={(input) => {
-            if (input) input.indeterminate = someSelected;
+            if (input) {
+              input.indeterminate = someSelected;
+            }
           }}
           onChange={() => {
-            if (onToggleSelectAll) onToggleSelectAll();
+            if (typeof onToggleSelectAll === "function") {
+              onToggleSelectAll();
+            }
           }}
           aria-label="Select all emails"
         />
-        <span>Select all</span>
-      </div>
+
+        <span>
+          {visibleSelectedCount > 0
+            ? `${visibleSelectedCount} selected`
+            : "Select all"}
+        </span>
+      </label>
 
       {grouped.map((group) => (
         <div key={group.name} className="email-group">
@@ -93,23 +117,30 @@ function EmailList({
                   (isChecked ? " email-row--checked" : "")
                 }
                 onClick={() => {
-                  if (onSelectEmail) onSelectEmail(email);
+                  if (typeof onSelectEmail === "function") {
+                    onSelectEmail(email);
+                  }
                 }}
                 onDoubleClick={() => {
-                  if (email.folder === "Drafts" && onOpenDraft) {
+                  if (email.folder === "Drafts" && typeof onOpenDraft === "function") {
                     onOpenDraft(email);
                   }
                 }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    if (onSelectEmail) onSelectEmail(email);
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+
+                    if (typeof onSelectEmail === "function") {
+                      onSelectEmail(email);
+                    }
                   }
                 }}
               >
                 <div className="email-avatar-column">
                   <div className="email-avatar" aria-hidden="true">
-                    <span>{getInitials(email.sender || email.toRecipients || "")}</span>
+                    <span>
+                      {getInitials(email.sender || email.toRecipients || "")}
+                    </span>
                   </div>
                 </div>
 
@@ -118,11 +149,16 @@ function EmailList({
                     type="checkbox"
                     className="email-checkbox"
                     checked={isChecked}
-                    onChange={(e) => {
-                      e.stopPropagation();
-                      if (onToggleSelectedEmail) onToggleSelectedEmail(email);
+                    onClick={(event) => {
+                      event.stopPropagation();
                     }}
-                    onClick={(e) => e.stopPropagation()}
+                    onChange={(event) => {
+                      event.stopPropagation();
+
+                      if (typeof onToggleSelectedEmail === "function") {
+                        onToggleSelectedEmail(email);
+                      }
+                    }}
                     aria-label={`Select ${email.subject || "email"}`}
                   />
                 </div>
