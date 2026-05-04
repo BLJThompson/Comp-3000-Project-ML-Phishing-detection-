@@ -1,3 +1,5 @@
+// frontend/src/pages/education/sections/AnatomySections.jsx
+
 import React from "react";
 import Section from "../components/Section.jsx";
 import WarningCard from "../components/WarningCard.jsx";
@@ -8,7 +10,7 @@ function AnatomySections() {
     <>
       <Section
         id="anatomy"
-        number="3"
+        number="4"
         title="Anatomy of a phishing email"
         intro="These are the parts of an email users should inspect before trusting it."
       >
@@ -23,7 +25,7 @@ function AnatomySections() {
           </div>
           <div>
             <strong>Links</strong>
-            <span>Check the real destination before clicking.</span>
+            <span>Check the real destination before clicking — the visible text can be fake.</span>
           </div>
           <div>
             <strong>Attachments</strong>
@@ -37,12 +39,27 @@ function AnatomySections() {
             <strong>Sensitive requests</strong>
             <span>Passwords, codes, payment changes, and bank details are high risk.</span>
           </div>
+          <div>
+            <strong>Personal details in the message</strong>
+            <span>
+              Attackers harvest public information from social media and LinkedIn to
+              personalise attacks. A message knowing your name, employer, or recent
+              activity is not proof it is safe.
+            </span>
+          </div>
+          <div>
+            <strong>Context mismatch</strong>
+            <span>
+              Does the request make sense? An invoice from someone you have never dealt
+              with, or a password reset you did not trigger, are both warning signs.
+            </span>
+          </div>
         </div>
       </Section>
 
       <Section
         id="warning-signs"
-        number="4"
+        number="5"
         title="Common warning signs"
         intro="Click each card to reveal why the example is suspicious."
       >

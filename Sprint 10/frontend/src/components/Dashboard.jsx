@@ -107,7 +107,7 @@ function Dashboard({ counts = {}, dashboardData = {} }) {
                   <strong>Junk folder</strong>
                   <span>Emails are sent directly to Junk when the phishing score is very high.</span>
                 </div>
-                <span className="dashboard-settings-threshold">≥ 95%</span>
+                <span className="dashboard-settings-threshold">≥ 90%</span>
               </div>
 
               <div className="dashboard-settings-rule">
@@ -115,7 +115,7 @@ function Dashboard({ counts = {}, dashboardData = {} }) {
                   <strong>Flagged folder</strong>
                   <span>Emails are flagged for review when the phishing score is suspicious but lower confidence.</span>
                 </div>
-                <span className="dashboard-settings-threshold">≥ 80%</span>
+                <span className="dashboard-settings-threshold">≥ 70%</span>
               </div>
 
               <div className="dashboard-settings-rule">
@@ -123,7 +123,7 @@ function Dashboard({ counts = {}, dashboardData = {} }) {
                   <strong>Inbox</strong>
                   <span>Emails below the flagged threshold remain in the inbox.</span>
                 </div>
-                <span className="dashboard-settings-threshold">&lt; 80%</span>
+                <span className="dashboard-settings-threshold">&lt; 70%</span>
               </div>
             </div>
 

@@ -1,11 +1,14 @@
+/* Help modal used for quick user guidance. */
+
 .help-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.45);
+  z-index: 140;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 140;
+  padding: 1rem;
+  background: rgba(15, 23, 42, 0.45);
 }
 
 .help-modal {
@@ -19,59 +22,48 @@
   box-shadow: 0 20px 50px rgba(15, 23, 42, 0.25);
 }
 
+/* Keeps the close button visible while scrolling. */
 .help-header {
+  position: sticky;
+  top: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
   padding: 1rem 1rem 0.85rem;
-  border-bottom: 1px solid var(--border-subtle, #e5e7eb);
-  position: sticky;
-  top: 0;
   background: var(--bg-surface, #ffffff);
+  border-bottom: 1px solid var(--border-subtle, #e5e7eb);
 }
 
-.help-header h3 {
-  margin: 0;
-}
+.help-header h3 { margin: 0; }
 
 .help-header button {
   border: 1px solid var(--border-subtle, #d1d5db);
-  background: white;
-  color: #111827;
-  padding: 0.45rem 0.75rem;
   border-radius: 0.55rem;
+  background: var(--bg-panel, #ffffff);
+  color: var(--text-main, #111827);
+  padding: 0.45rem 0.75rem;
   cursor: pointer;
 }
 
+.help-header button:hover {
+  border-color: var(--accent, #2563eb);
+  background: var(--bg-row-hover, #f1f5f9);
+}
+
 .help-body {
-  padding: 1rem;
   display: grid;
   gap: 1rem;
+  padding: 1rem;
 }
 
 .help-section {
   border: 1px solid var(--border-subtle, #e5e7eb);
   border-radius: 0.85rem;
-  padding: 0.9rem 1rem;
   background: var(--bg-row, #f8fafc);
+  padding: 0.9rem 1rem;
 }
 
-.help-section h4 {
-  margin: 0 0 0.6rem;
-}
-
-.help-section ul {
-  margin: 0;
-  padding-left: 1.15rem;
-}
-
-.help-section li + li {
-  margin-top: 0.45rem;
-}
-
-[data-theme="dark"] .help-header button {
-  background: #1f2937;
-  color: #f9fafb;
-  border-color: #374151;
-}
+.help-section h4 { margin: 0 0 0.6rem; }
+.help-section ul { margin: 0; padding-left: 1.15rem; }
+.help-section li + li { margin-top: 0.45rem; }

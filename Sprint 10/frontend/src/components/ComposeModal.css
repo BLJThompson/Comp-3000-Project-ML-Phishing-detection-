@@ -1,3 +1,5 @@
+/* Email compose modal. */
+
 .compose-backdrop {
   position: fixed;
   inset: 0;
@@ -16,13 +18,14 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: #ffffff;
-  color: #0f172a;
-  border: 1px solid #e5e7eb;
+  background: var(--bg-panel, #ffffff);
+  color: var(--text-main, #0f172a);
+  border: 1px solid var(--border-subtle, #e5e7eb);
   border-radius: 1.15rem;
   box-shadow: 0 24px 70px rgba(15, 23, 42, 0.28);
 }
 
+/* Separates the form from the title and action buttons. */
 .compose-header,
 .compose-footer {
   display: flex;
@@ -30,16 +33,11 @@
   justify-content: space-between;
   gap: 1rem;
   padding: 1rem 1.15rem;
-  background: #f8fafc;
+  background: var(--bg-row, #f8fafc);
 }
 
-.compose-header {
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.compose-footer {
-  border-top: 1px solid #e5e7eb;
-}
+.compose-header { border-bottom: 1px solid var(--border-subtle, #e5e7eb); }
+.compose-footer { border-top: 1px solid var(--border-subtle, #e5e7eb); }
 
 .compose-header h3 {
   margin: 0;
@@ -49,17 +47,17 @@
 
 .compose-header p {
   margin: 0.2rem 0 0;
-  color: #64748b;
+  color: var(--text-muted, #64748b);
   font-size: 0.86rem;
 }
 
 .compose-body {
   flex: 1;
-  overflow-y: auto;
-  padding: 1rem 1.15rem;
   display: flex;
   flex-direction: column;
   gap: 0.85rem;
+  overflow-y: auto;
+  padding: 1rem 1.15rem;
 }
 
 .compose-field {
@@ -69,38 +67,33 @@
   gap: 0.75rem;
 }
 
+.compose-field--body { align-items: start; }
+
 .compose-field label {
-  color: #475569;
+  color: var(--text-muted, #475569);
   font-size: 0.86rem;
   font-weight: 800;
 }
 
-.compose-field input,
-.compose-field textarea {
+.compose-field :is(input, textarea) {
   width: 100%;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--border-strong, #d1d5db);
   border-radius: 0.75rem;
   padding: 0.75rem 0.85rem;
-  background: #ffffff;
-  color: #0f172a;
+  background: var(--bg-panel, #ffffff);
+  color: var(--text-main, #0f172a);
   font: inherit;
   outline: none;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.compose-field input:focus,
-.compose-field textarea:focus {
-  border-color: #2563eb;
+.compose-field :is(input, textarea):focus {
+  border-color: var(--accent, #2563eb);
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
 }
 
-.compose-field input::placeholder,
-.compose-field textarea::placeholder {
-  color: #94a3b8;
-}
-
-.compose-field--body {
-  align-items: start;
+.compose-field :is(input, textarea)::placeholder {
+  color: var(--text-muted, #94a3b8);
 }
 
 .compose-field textarea {
@@ -118,10 +111,11 @@
   font-weight: 700;
 }
 
+/* Shared compose buttons. */
 .compose-icon-btn,
 .compose-primary-btn,
 .compose-secondary-btn {
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--border-strong, #d1d5db);
   border-radius: 0.75rem;
   font: inherit;
   font-weight: 800;
@@ -134,28 +128,28 @@
   height: 2.25rem;
   display: grid;
   place-items: center;
-  background: #ffffff;
-  color: #0f172a;
+  background: var(--bg-panel, #ffffff);
+  color: var(--text-main, #0f172a);
   font-size: 1.45rem;
   line-height: 1;
 }
 
 .compose-secondary-btn {
-  background: #ffffff;
-  color: #0f172a;
+  background: var(--bg-panel, #ffffff);
+  color: var(--text-main, #0f172a);
   padding: 0.7rem 0.95rem;
 }
 
 .compose-primary-btn {
-  background: #2563eb;
-  border-color: #2563eb;
+  background: var(--accent, #2563eb);
+  border-color: var(--accent, #2563eb);
   color: #ffffff;
   padding: 0.7rem 1rem;
 }
 
 .compose-icon-btn:hover:not(:disabled),
 .compose-secondary-btn:hover:not(:disabled) {
-  background: #f1f5f9;
+  background: var(--bg-row-hover, #f1f5f9);
   border-color: #94a3b8;
 }
 
@@ -173,89 +167,16 @@
 .compose-icon-btn:disabled,
 .compose-primary-btn:disabled,
 .compose-secondary-btn:disabled,
-.compose-field input:disabled,
-.compose-field textarea:disabled {
+.compose-field :is(input, textarea):disabled {
   cursor: not-allowed;
   opacity: 0.65;
 }
 
-[data-theme="dark"] .compose-backdrop {
-  background: rgba(2, 6, 23, 0.72);
-}
-
-[data-theme="dark"] .compose-modal {
-  background: #111827;
-  color: #f9fafb;
-  border-color: #374151;
-  box-shadow: none;
-}
-
-[data-theme="dark"] .compose-header,
-[data-theme="dark"] .compose-footer {
-  background: #0f172a;
-  border-color: #374151;
-}
-
-[data-theme="dark"] .compose-header p,
-[data-theme="dark"] .compose-field label {
-  color: #cbd5e1;
-}
-
-[data-theme="dark"] .compose-field input,
-[data-theme="dark"] .compose-field textarea,
-[data-theme="dark"] .compose-icon-btn,
-[data-theme="dark"] .compose-secondary-btn {
-  background: #1f2937;
-  color: #f9fafb;
-  border-color: #374151;
-}
-
-[data-theme="dark"] .compose-field input:focus,
-[data-theme="dark"] .compose-field textarea:focus {
-  border-color: #60a5fa;
-  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.16);
-}
-
-[data-theme="dark"] .compose-field input::placeholder,
-[data-theme="dark"] .compose-field textarea::placeholder {
-  color: #94a3b8;
-}
-
-[data-theme="dark"] .compose-icon-btn:hover:not(:disabled),
-[data-theme="dark"] .compose-secondary-btn:hover:not(:disabled) {
-  background: #243244;
-  border-color: #60a5fa;
-}
-
-[data-theme="dark"] .compose-error {
-  color: #fecaca;
-  background: rgba(239, 68, 68, 0.15);
-  border-color: rgba(248, 113, 113, 0.5);
-}
-
 @media (max-width: 680px) {
-  .compose-backdrop {
-    padding: 0.5rem;
-  }
-
-  .compose-modal {
-    width: 100%;
-    max-height: 95vh;
-    border-radius: 0.9rem;
-  }
-
-  .compose-field {
-    grid-template-columns: 1fr;
-    gap: 0.35rem;
-  }
-
-  .compose-footer {
-    flex-direction: column-reverse;
-    align-items: stretch;
-  }
-
+  .compose-backdrop { padding: 0.5rem; }
+  .compose-modal { width: 100%; max-height: 95vh; border-radius: 0.9rem; }
+  .compose-field { grid-template-columns: 1fr; gap: 0.35rem; }
+  .compose-footer { flex-direction: column-reverse; align-items: stretch; }
   .compose-primary-btn,
-  .compose-secondary-btn {
-    width: 100%;
-  }
+  .compose-secondary-btn { width: 100%; }
 }

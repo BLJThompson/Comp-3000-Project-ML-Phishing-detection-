@@ -1,15 +1,21 @@
+// frontend/src/pages/education/EducationPage.jsx
+
 import React from "react";
 import EducationHero from "./components/EducationHero.jsx";
-import EducationNav from "./components/EducationNav.jsx";
-import BasicsSections from "./sections/BasicsSections.jsx";
-import AnatomySections from "./sections/AnatomySections.jsx";
-import ScenarioSections from "./sections/ScenarioSections.jsx";
+import EducationNav  from "./components/EducationNav.jsx";
+import BasicsSections       from "./sections/BasicsSections.jsx";
+import AnatomySections      from "./sections/AnatomySections.jsx";
 import SafetyChecksSections from "./sections/SafetyChecksSections.jsx";
-import ActionSections from "./sections/ActionSections.jsx";
-import MythSections from "./sections/MythSections.jsx";
-import QuizSection from "./sections/QuizSection.jsx";
-import LimitationsSection from "./sections/LimitationsSection.jsx";
-import ResourcesSection from "./sections/ResourcesSection.jsx";
+import ActionSections       from "./sections/ActionSections.jsx";
+import {
+  PhishingTypesSection,
+  ScenarioSections,
+  ProtectionSection,
+  MythSections,
+  QuizSection,
+  LimitationsSection,
+  ResourcesSection,
+} from "./sections/ContentSections.jsx";
 import "./Education.css";
 
 function EducationPage() {
@@ -18,9 +24,11 @@ function EducationPage() {
       <EducationHero />
       <EducationNav />
 
+      <PhishingTypesSection />
       <BasicsSections />
       <AnatomySections />
       <ScenarioSections />
+      <ProtectionSection />
       <SafetyChecksSections />
       <ActionSections />
       <MythSections />

@@ -1,5 +1,8 @@
+// frontend/src/api/mailApi.js
+
 const API_BASE = "http://localhost:4000/api";
 
+// Base fetch wrapper — throws on non-ok responses with the server's error message.
 async function request(url, options = {}) {
   const response = await fetch(url, options);
 
@@ -11,102 +14,80 @@ async function request(url, options = {}) {
   return response.json();
 }
 
-export async function fetchEmails({ folder, searchTerm = "" }) {
+// Shorthand for requests with a JSON body.
+function jsonRequest(url, method, payload) {
+  return request(url, {
+    method,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}
+
+// ─── Emails ───────────────────────────────────────────────────────────────────
+
+export function fetchEmails({ folder, searchTerm = "" }) {
   const params = new URLSearchParams();
   if (folder) params.set("folder", folder);
   if (searchTerm) params.set("search", searchTerm);
-
-  return request(`${API_BASE}/emails?${params.toString()}`);
+  return request(`${API_BASE}/emails?${params}`);
 }
 
-export async function fetchFolderCounts() {
+export function fetchFolderCounts() {
   return request(`${API_BASE}/emails/counts`);
 }
 
-export async function getEmailById(id) {
+export function getEmailById(id) {
   return request(`${API_BASE}/emails/${id}`);
 }
 
-export async function getEmailThread(id) {
+export function getEmailThread(id) {
   return request(`${API_BASE}/emails/${id}/thread`);
 }
 
-export async function updateEmail(id, payload) {
-  return request(`${API_BASE}/emails/${id}`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
+export function updateEmail(id, payload) {
+  return jsonRequest(`${API_BASE}/emails/${id}`, "PATCH", payload);
 }
 
-export async function moveEmail(id, folder) {
-  return request(`${API_BASE}/emails/${id}/move`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ folder }),
-  });
+export function moveEmail(id, folder) {
+  return jsonRequest(`${API_BASE}/emails/${id}/move`, "PATCH", { folder });
 }
 
-export async function deleteEmail(id) {
-  return request(`${API_BASE}/emails/${id}/delete`, {
-    method: "PATCH",
-  });
+export function deleteEmail(id) {
+  return request(`${API_BASE}/emails/${id}/delete`, { method: "PATCH" });
 }
 
-export async function restoreEmail(id) {
-  return request(`${API_BASE}/emails/${id}/restore`, {
-    method: "PATCH",
-  });
+export function restoreEmail(id) {
+  return request(`${API_BASE}/emails/${id}/restore`, { method: "PATCH" });
 }
 
-export async function createDraft(payload) {
-  return request(`${API_BASE}/emails/draft`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
+export function createDraft(payload) {
+  return jsonRequest(`${API_BASE}/emails/draft`, "POST", payload);
 }
 
-export async function updateDraft(id, payload) {
-  return request(`${API_BASE}/emails/${id}/draft`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
+export function updateDraft(id, payload) {
+  return jsonRequest(`${API_BASE}/emails/${id}/draft`, "PATCH", payload);
 }
 
-export async function sendEmail(payload) {
-  return request(`${API_BASE}/emails/send`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
+export function sendEmail(payload) {
+  return jsonRequest(`${API_BASE}/emails/send`, "POST", payload);
 }
 
-export async function sendGmailEmail(payload) {
-  return request(`${API_BASE}/gmail/send`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
+// ─── Gmail ────────────────────────────────────────────────────────────────────
+
+export function sendGmailEmail(payload) {
+  return jsonRequest(`${API_BASE}/gmail/send`, "POST", payload);
 }
 
-export async function importUnreadGmailEmails(maxResults = 10) {
-  return request(`${API_BASE}/gmail/import-unread`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ maxResults }),
-  });
+export function importUnreadGmailEmails(maxResults = 10) {
+  return jsonRequest(`${API_BASE}/gmail/import-unread`, "POST", { maxResults });
 }
 
-export async function clearInbox() {
-  return request(`${API_BASE}/dev/clear-inbox`, {
-    method: "POST",
-  });
+// ─── Dev ──────────────────────────────────────────────────────────────────────
+
+export function clearInbox() {
+  return request(`${API_BASE}/dev/clear-inbox`, { method: "DELETE" });
 }
 
-export async function clearAllEmails() {
-  return request(`${API_BASE}/dev/clear-all`, {
-    method: "POST",
-  });
+export function clearAllEmails() {
+  return request(`${API_BASE}/dev/clear-all`, { method: "DELETE" });
 }

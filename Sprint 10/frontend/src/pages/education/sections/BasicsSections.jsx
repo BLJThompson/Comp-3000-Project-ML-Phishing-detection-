@@ -1,3 +1,5 @@
+// frontend/src/pages/education/sections/BasicsSections.jsx
+
 import React from "react";
 import Section from "../components/Section.jsx";
 
@@ -6,7 +8,7 @@ function BasicsSections() {
     <>
       <Section
         id="basics"
-        number="1"
+        number="2"
         title="How phishing works"
         intro="Phishing messages try to make users act quickly without checking."
       >
@@ -24,6 +26,8 @@ function BasicsSections() {
             <p>
               They impersonate trusted organisations, create urgency, use
               familiar branding, and make the request seem routine or important.
+              AI tools now help attackers produce flawless, personalised messages
+              at scale.
             </p>
           </div>
         </div>
@@ -31,7 +35,7 @@ function BasicsSections() {
 
       <Section
         id="system"
-        number="2"
+        number="3"
         title="How this system helps"
         intro="The prototype supports user judgement by combining classification, routing, and explanation."
       >
@@ -61,15 +65,15 @@ function BasicsSections() {
         <div className="label-grid">
           <div className="label-card label-card--green">
             <h3>Benign</h3>
-            <p>The email appears low risk, but unusual messages should still be checked.</p>
+            <p>Score below 70%. Appears low risk, but unusual messages should still be checked.</p>
           </div>
           <div className="label-card label-card--amber">
             <h3>Flagged</h3>
-            <p>The email has suspicious characteristics and should be reviewed carefully.</p>
+            <p>Score 70–89%. Has suspicious characteristics and should be reviewed carefully.</p>
           </div>
           <div className="label-card label-card--red">
             <h3>Junk</h3>
-            <p>The email is treated as high risk and moved away from the normal inbox.</p>
+            <p>Score 90% or above. Treated as high risk and moved away from the normal inbox.</p>
           </div>
         </div>
       </Section>

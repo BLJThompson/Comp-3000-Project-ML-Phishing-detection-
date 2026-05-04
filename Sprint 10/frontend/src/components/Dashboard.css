@@ -254,29 +254,6 @@
   font-size: 0.85rem;
 }
 
-/* Dark theme */
-
-[data-theme="dark"] .dashboard-card {
-  background: var(--bg-row, #111827);
-  border-color: var(--border-subtle, #374151);
-}
-
-[data-theme="dark"] .dashboard-settings-rule {
-  background: var(--bg-main, #0f172a);
-  border-color: #374151;
-}
-
-[data-theme="dark"] .dashboard-indicator-item strong {
-  background: rgba(239, 68, 68, 0.18);
-  color: #fca5a5;
-}
-
-[data-theme="dark"] .dashboard-settings-badge {
-  background: rgba(124, 58, 237, 0.2);
-  color: #c4b5fd;
-  border-color: rgba(196, 181, 253, 0.35);
-}
-
 /* Responsive layout. */
 
 @media (max-width: 1200px) {

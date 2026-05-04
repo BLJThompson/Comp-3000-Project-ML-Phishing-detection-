@@ -1,3 +1,5 @@
+// frontend/src/pages/Deleted.jsx
+
 import React from "react";
 import EmailList from "../components/EmailList";
 

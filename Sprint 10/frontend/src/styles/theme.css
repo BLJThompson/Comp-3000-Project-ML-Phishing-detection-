@@ -1,0 +1,487 @@
+/* Shared theme colours used across the app. */
+
+:root {
+  --bg-main: #f3f4f6;
+  --bg-surface: #ffffff;
+  --bg-panel: #ffffff;
+  --bg-row: #f8fafc;
+  --bg-row-hover: #f1f5f9;
+
+  --text-main: #111827;
+  --text-muted: #64748b;
+  --text-secondary: #475569;
+
+  --border-subtle: #e5e7eb;
+  --border-strong: #d1d5db;
+
+  --accent: #2563eb;
+  --accent-soft: #eff6ff;
+}
+
+[data-theme="dark"] {
+  --bg-main: #020617;
+  --bg-surface: #111827;
+  --bg-panel: #111827;
+  --bg-row: #1f2937;
+  --bg-row-hover: #243244;
+
+  --text-main: #f9fafb;
+  --text-muted: #94a3b8;
+  --text-secondary: #cbd5e1;
+
+  --border-subtle: #374151;
+  --border-strong: #4b5563;
+
+  --accent: #60a5fa;
+  --accent-soft: rgba(37, 99, 235, 0.25);
+}
+
+
+/* Dark theme overrides kept in one place. */
+
+
+/* App.css */
+
+[data-theme="dark"] .app-shell {
+  --bg-main: #030712;
+  --bg-surface: #111827;
+  --bg-row: #1f2937;
+  --text-main: #f9fafb;
+  --text-muted: #9ca3af;
+  --border-subtle: #374151;
+  background: var(--bg-main);
+  color: var(--text-main);
+}
+
+[data-theme="dark"] :is(.theme-toggle-btn, .help-btn, .search-input) {
+  background: #1f2937;
+  color: #f9fafb;
+  border-color: #374151;
+}
+
+[data-theme="dark"] .gmail-status-strip {
+  background: #111827;
+  color: #cbd5e1;
+  border-color: #374151;
+}
+
+[data-theme="dark"] .gmail-status-strip span {
+  background: #0f172a;
+  border-color: #374151;
+}
+
+
+/* ComposeModal.css */
+
+[data-theme="dark"] .compose-backdrop { background: rgba(2, 6, 23, 0.72); }
+
+[data-theme="dark"] .compose-modal {
+  background: #111827;
+  color: #f9fafb;
+  border-color: #374151;
+  box-shadow: none;
+}
+
+[data-theme="dark"] :is(.compose-header, .compose-footer) {
+  background: #0f172a;
+  border-color: #374151;
+}
+
+[data-theme="dark"] :is(.compose-header p, .compose-field label) { color: #cbd5e1; }
+
+[data-theme="dark"] :is(.compose-field input, .compose-field textarea, .compose-icon-btn, .compose-secondary-btn) {
+  background: #1f2937;
+  color: #f9fafb;
+  border-color: #374151;
+}
+
+[data-theme="dark"] .compose-field :is(input, textarea):focus {
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.16);
+}
+
+[data-theme="dark"] :is(.compose-icon-btn, .compose-secondary-btn):hover:not(:disabled) {
+  background: #243244;
+  border-color: #60a5fa;
+}
+
+[data-theme="dark"] .compose-error {
+  color: #fecaca;
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(248, 113, 113, 0.5);
+}
+
+
+/* Dashboard.css */
+
+/* Dark theme */
+
+[data-theme="dark"] .dashboard-card {
+  background: var(--bg-row, #111827);
+  border-color: var(--border-subtle, #374151);
+}
+
+[data-theme="dark"] .dashboard-settings-rule {
+  background: var(--bg-main, #0f172a);
+  border-color: #374151;
+}
+
+[data-theme="dark"] .dashboard-indicator-item strong {
+  background: rgba(239, 68, 68, 0.18);
+  color: #fca5a5;
+}
+
+[data-theme="dark"] .dashboard-settings-badge {
+  background: rgba(124, 58, 237, 0.2);
+  color: #c4b5fd;
+  border-color: rgba(196, 181, 253, 0.35);
+}
+
+
+/* Education.css */
+
+/* Dark theme */
+
+[data-theme="dark"] .education-page {
+  background: var(--bg-main, #020617);
+  color: var(--text-main, #f8fafc);
+}
+
+[data-theme="dark"] .education-hero {
+  background:
+    radial-gradient(circle at top right, rgba(59, 130, 246, 0.22), transparent 35%),
+    #111827;
+  color: #f9fafb;
+  border-color: #374151;
+  box-shadow: none;
+}
+
+[data-theme="dark"] .education-section,
+[data-theme="dark"] .education-hero-card,
+[data-theme="dark"] .education-card,
+[data-theme="dark"] .process-step,
+[data-theme="dark"] .label-card,
+[data-theme="dark"] .education-reveal-card,
+[data-theme="dark"] .scenario-card,
+[data-theme="dark"] .level-card,
+[data-theme="dark"] .comparison-column,
+[data-theme="dark"] .report-card,
+[data-theme="dark"] .myth-card,
+[data-theme="dark"] .quiz-launch-card,
+[data-theme="dark"] .education-check-grid div {
+  background: #111827;
+  color: #f9fafb;
+  border-color: #374151;
+  box-shadow: none;
+}
+
+[data-theme="dark"] .education-hero p,
+[data-theme="dark"] .education-section-heading p,
+[data-theme="dark"] .education-card p,
+[data-theme="dark"] .process-step p,
+[data-theme="dark"] .label-card p,
+[data-theme="dark"] .scenario-card p,
+[data-theme="dark"] .report-card p,
+[data-theme="dark"] .myth-card p,
+[data-theme="dark"] .quiz-launch-card p,
+[data-theme="dark"] .education-check-grid span,
+[data-theme="dark"] .education-explanation,
+[data-theme="dark"] .quiz-toast-header p {
+  color: #cbd5e1;
+}
+
+[data-theme="dark"] .education-pill {
+  background: rgba(59, 130, 246, 0.18);
+  color: #93c5fd;
+}
+
+[data-theme="dark"] .education-section-number,
+[data-theme="dark"] .process-step span {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+[data-theme="dark"] .education-nav a,
+[data-theme="dark"] .resource-grid a,
+[data-theme="dark"] .resource-links a {
+  background: #111827;
+  color: #93c5fd;
+  border-color: #374151;
+}
+
+[data-theme="dark"] .education-nav a:hover,
+[data-theme="dark"] .resource-grid a:hover,
+[data-theme="dark"] .resource-links a:hover,
+[data-theme="dark"] .education-reveal-card:hover {
+  border-color: #60a5fa;
+  background: #1f2937;
+}
+
+[data-theme="dark"] .education-reveal-top span,
+[data-theme="dark"] .education-card h3,
+[data-theme="dark"] .label-card h3,
+[data-theme="dark"] .scenario-card h3,
+[data-theme="dark"] .level-card h3,
+[data-theme="dark"] .comparison-column h3,
+[data-theme="dark"] .myth-card h3,
+[data-theme="dark"] .report-card strong {
+  color: #f9fafb;
+}
+
+[data-theme="dark"] .education-reveal-top strong {
+  color: #93c5fd;
+}
+
+[data-theme="dark"] .education-example {
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .label-card--green,
+[data-theme="dark"] .comparison-column--safe {
+  border-left-color: #22c55e;
+}
+
+[data-theme="dark"] .label-card--amber {
+  border-left-color: #f59e0b;
+}
+
+[data-theme="dark"] .label-card--red,
+[data-theme="dark"] .comparison-column--risk {
+  border-left-color: #ef4444;
+}
+
+[data-theme="dark"] .report-card,
+[data-theme="dark"] .scenario-card {
+  border-left-color: #60a5fa;
+}
+
+[data-theme="dark"] .myth-card {
+  border-left-color: #a78bfa;
+}
+
+[data-theme="dark"] .quiz-overlay {
+  background: rgba(2, 6, 23, 0.72);
+}
+
+[data-theme="dark"] .quiz-toast,
+[data-theme="dark"] .quiz-option,
+[data-theme="dark"] .quiz-secondary-btn,
+[data-theme="dark"] .quiz-close-btn,
+[data-theme="dark"] .quiz-progress-row,
+[data-theme="dark"] .quiz-complete {
+  background: #111827;
+  color: #f9fafb;
+  border-color: #374151;
+}
+
+[data-theme="dark"] .quiz-option:hover,
+[data-theme="dark"] .quiz-option--selected {
+  border-color: #60a5fa;
+  background: #1f2937;
+}
+
+[data-theme="dark"] .quiz-option--correct {
+  border-color: #22c55e;
+  background: rgba(34, 197, 94, 0.15);
+}
+
+[data-theme="dark"] .quiz-option--incorrect {
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.15);
+}
+
+[data-theme="dark"] .quiz-feedback--correct {
+  color: #86efac;
+}
+
+[data-theme="dark"] .quiz-feedback--incorrect {
+  color: #fca5a5;
+}
+
+[data-theme="dark"] .quiz-primary-btn,
+[data-theme="dark"] .quiz-start-btn {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #ffffff;
+}
+
+[data-theme="dark"] .quiz-primary-btn:hover,
+[data-theme="dark"] .quiz-start-btn:hover {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+}
+
+[data-theme="dark"] .quiz-secondary-btn:hover,
+[data-theme="dark"] .quiz-close-btn:hover {
+  background: #1f2937;
+  border-color: #60a5fa;
+}
+
+
+/* EmailDetail.css */
+
+/* Dark theme. */
+[data-theme="dark"] :is(.reading-pane, .email-detail) {
+  background: #020617;
+  color: #f9fafb;
+}
+
+[data-theme="dark"] :is(.email-print-style-card, .email-thread-section) {
+  background: #111827;
+  color: #f9fafb;
+  border-color: #374151;
+  box-shadow: none;
+}
+
+[data-theme="dark"] .email-detail--empty {
+  background: #020617;
+  color: #94a3b8;
+}
+
+[data-theme="dark"] :is(
+  .email-detail-subject,
+  .email-detail-meta-label,
+  .email-detail-meta-value,
+  .email-detail-body,
+  .email-detail-body-section h3,
+  .email-thread-title,
+  .email-thread-message-subject
+) {
+  color: #f9fafb;
+}
+
+[data-theme="dark"] :is(.email-detail-divider, .email-detail-body-section) {
+  border-color: #374151;
+}
+
+[data-theme="dark"] :is(
+  .email-ai-score,
+  .email-thread-message-from,
+  .email-thread-message-date,
+  .email-thread-message-recipient
+) {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] :is(
+  .email-ai-explanation,
+  .email-findings-summary,
+  .email-summary-panel,
+  .email-detection-details,
+  .email-body-hidden-frame,
+  .email-detail-body--normal,
+  .email-thread-message
+) {
+  background: #1f2937;
+  color: #f9fafb;
+  border-color: #374151;
+}
+
+[data-theme="dark"] :is(
+  .email-ai-explanation p,
+  .email-findings-summary li,
+  .email-summary-panel p,
+  .email-detection-details li,
+  .email-thread-message-body
+) {
+  color: #e5e7eb;
+}
+
+[data-theme="dark"] .email-ai-badge--benign { background: rgba(34, 197, 94, 0.18); color: #86efac; }
+
+[data-theme="dark"] .email-ai-badge--phishing { background: rgba(239, 68, 68, 0.18); color: #fca5a5; }
+
+[data-theme="dark"] .email-highlight--high { background: rgba(239, 68, 68, 0.32); color: #fecaca; }
+
+[data-theme="dark"] .email-highlight--medium { background: rgba(245, 158, 11, 0.3); color: #fde68a; }
+
+[data-theme="dark"] .email-highlight--low { background: rgba(59, 130, 246, 0.28); color: #bfdbfe; }
+
+[data-theme="dark"] .email-thread-message--current {
+  border-color: #60a5fa;
+}
+
+[data-theme="dark"] .email-body-overlay {
+  background: rgba(15, 23, 42, 0.82);
+  color: #f9fafb;
+}
+
+[data-theme="dark"] .email-body-overlay small {
+  color: #cbd5e1;
+}
+
+[data-theme="dark"] .email-reveal-btn {
+  background: #111827;
+  color: #f9fafb;
+  border-color: #374151;
+}
+
+[data-theme="dark"] .email-reveal-btn:hover {
+  background: #1f2937;
+  border-color: #60a5fa;
+}
+
+[data-theme="dark"] .email-reveal-btn--warning {
+  color: #fecaca;
+  background: rgba(239, 68, 68, 0.14);
+  border-color: rgba(248, 113, 113, 0.45);
+}
+
+[data-theme="dark"] .email-detail::-webkit-scrollbar { width: 8px; }
+
+[data-theme="dark"] .email-detail::-webkit-scrollbar-track { background: #020617; }
+
+[data-theme="dark"] .email-detail::-webkit-scrollbar-thumb { background: #475569; border-radius: 999px; }
+
+[data-theme="dark"] .email-detail::-webkit-scrollbar-thumb:hover { background: #64748b; }
+
+
+/* EmailList.css */
+
+[data-theme="dark"] .email-select-all { color: #cbd5e1; }
+
+[data-theme="dark"] .email-unread-pill { background: rgba(37, 99, 235, 0.25); color: #bfdbfe; }
+
+
+/* HelpModal.css */
+
+[data-theme="dark"] .help-header button {
+  background: #1f2937;
+  color: #f9fafb;
+  border-color: #374151;
+}
+
+[data-theme="dark"] .help-header button:hover {
+  background: #243244;
+  border-color: #60a5fa;
+}
+
+
+/* TopToolbar.css */
+
+.top-toolbar-btn--primary,
+[data-theme="dark"] .top-toolbar-btn--primary {
+  background: var(--accent, #2563eb) !important;
+  border-color: var(--accent, #2563eb) !important;
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .top-toolbar {
+  background: #111827;
+  border-bottom-color: #374151;
+}
+
+[data-theme="dark"] .top-toolbar :is(button, select),
+[data-theme="dark"] :is(.top-toolbar-btn, .top-toolbar-select) {
+  background: #1f2937;
+  color: #f9fafb;
+  border-color: #374151;
+}
+
+[data-theme="dark"] .top-toolbar :is(button, select):hover:not(:disabled),
+[data-theme="dark"] :is(.top-toolbar-btn, .top-toolbar-select):hover:not(:disabled) {
+  background: #243244;
+  border-color: #60a5fa;
+}
+
+[data-theme="dark"] .top-toolbar-btn--danger { color: #fca5a5 !important; }

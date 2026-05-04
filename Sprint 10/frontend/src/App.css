@@ -1,3 +1,5 @@
+/* Main app shell and mailbox layout. */
+
 #root {
   width: 100%;
   min-height: 100vh;
@@ -34,28 +36,19 @@
   justify-content: space-between;
   align-items: center;
   gap: 0.75rem;
-  text-align: left;
-  border: none;
-  background: transparent;
-  padding: 0.75rem 0.8rem;
+  width: 100%;
+  border: 0;
   border-radius: 0.7rem;
-  cursor: pointer;
+  background: transparent;
   color: inherit;
+  padding: 0.75rem 0.8rem;
+  text-align: left;
+  cursor: pointer;
 }
 
-.nav-item:hover {
-  background: var(--bg-row, #f3f4f6);
-}
-
-.nav-item--active {
-  background: #2563eb;
-  color: white;
-}
-
-.nav-item-count {
-  font-size: 0.88rem;
-  opacity: 0.9;
-}
+.nav-item:hover { background: var(--bg-row, #f3f4f6); }
+.nav-item--active { background: #2563eb; color: #ffffff; }
+.nav-item-count { font-size: 0.88rem; opacity: 0.9; }
 
 .main {
   flex: 1;
@@ -65,10 +58,16 @@
   overflow: hidden;
 }
 
-.topbar {
+.topbar,
+.topbar-right,
+.topbar-controls,
+.theme-toggle-group {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+}
+
+.topbar {
+  justify-content: space-between;
   gap: 1rem;
   padding: 0.9rem 1rem;
   border-bottom: 1px solid var(--border-subtle, #e5e7eb);
@@ -80,35 +79,33 @@
   font-size: 1.75rem;
 }
 
-.topbar-right {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
+.topbar-right { gap: 0.75rem; }
+.topbar-controls { gap: 0.65rem; }
+.theme-toggle-group { gap: 0.4rem; }
 
-.theme-toggle-group {
-  display: flex;
-  gap: 0.4rem;
-}
-
-.theme-toggle-btn {
+.theme-toggle-btn,
+.help-btn,
+.search-input {
   border: 1px solid var(--border-subtle, #d1d5db);
-  background: white;
-  padding: 0.4rem 0.7rem;
+  background: var(--bg-panel, #ffffff);
+  color: var(--text-main, #111827);
+}
+
+.theme-toggle-btn,
+.help-btn {
   border-radius: 999px;
+  padding: 0.4rem 0.7rem;
   cursor: pointer;
 }
 
 .theme-toggle-btn--active {
-  background: #2563eb;
-  color: white;
-  border-color: #2563eb;
+  background: var(--accent, #2563eb);
+  color: #ffffff;
+  border-color: var(--accent, #2563eb);
 }
 
 .search-input {
   min-width: 220px;
-  border: 1px solid var(--border-subtle, #d1d5db);
-  background: white;
   border-radius: 0.6rem;
   padding: 0.55rem 0.8rem;
 }
@@ -117,6 +114,13 @@
   display: flex;
   height: calc(100vh - 130px);
   overflow: hidden;
+}
+
+/* Shared wrappers for folder pages that do not need separate CSS files. */
+.inbox-page,
+.flagged-page,
+.sent-page {
+  height: 100%;
 }
 
 .list-pane {
@@ -132,64 +136,7 @@
   padding: 1rem;
 }
 
-[data-theme="dark"] .app-shell {
-  --bg-main: #030712;
-  --bg-surface: #111827;
-  --bg-row: #1f2937;
-  --text-main: #f9fafb;
-  --text-muted: #9ca3af;
-  --border-subtle: #374151;
-  background: var(--bg-main);
-  color: var(--text-main);
-}
-
-[data-theme="dark"] .theme-toggle-btn,
-[data-theme="dark"] .search-input {
-  background: #1f2937;
-  color: #f9fafb;
-  border-color: #374151;
-}
-
-@media (max-width: 1000px) {
-  .content {
-    flex-direction: column;
-    height: auto;
-  }
-
-  .list-pane {
-    width: 100%;
-    min-width: 0;
-    border-right: none;
-    border-bottom: 1px solid var(--border-subtle, #e5e7eb);
-    max-height: 320px;
-  }
-}
-.topbar-controls {
-  display: flex;
-  align-items: center;
-  gap: 0.65rem;
-}
-
-.help-btn {
-  border: 1px solid var(--border-subtle, #d1d5db);
-  background: white;
-  color: #111827;
-  padding: 0.4rem 0.7rem;
-  border-radius: 999px;
-  cursor: pointer;
-}
-
-[data-theme="dark"] .help-btn {
-  background: #1f2937;
-  color: #f9fafb;
-  border-color: #374151;
-}
-
-/* =========================================================
-   Gmail connection/status strip
-   Added for Gmail import/send integration
-   ========================================================= */
-
+/* Shows Gmail connection details without taking over the layout. */
 .gmail-status-strip {
   display: flex;
   flex-wrap: wrap;
@@ -204,21 +151,25 @@
 .gmail-status-strip span {
   display: inline-flex;
   align-items: center;
-  border-radius: 999px;
-  padding: 0.2rem 0.55rem;
-  background: var(--bg-main, #ffffff);
   border: 1px solid var(--border-subtle, #e5e7eb);
+  border-radius: 999px;
+  background: var(--bg-main, #ffffff);
+  padding: 0.2rem 0.55rem;
 }
 
-[data-theme="dark"] .gmail-status-strip {
-  background: #111827;
-  color: #cbd5e1;
-  border-color: #374151;
-}
+@media (max-width: 1000px) {
+  .content {
+    flex-direction: column;
+    height: auto;
+  }
 
-[data-theme="dark"] .gmail-status-strip span {
-  background: #0f172a;
-  border-color: #374151;
+  .list-pane {
+    width: 100%;
+    min-width: 0;
+    max-height: 320px;
+    border-right: 0;
+    border-bottom: 1px solid var(--border-subtle, #e5e7eb);
+  }
 }
 
 @media (max-width: 700px) {

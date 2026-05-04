@@ -1,3 +1,5 @@
+/* Global defaults and theme variables. */
+
 :root {
   font-family: Inter, system-ui, Arial, sans-serif;
   line-height: 1.5;
@@ -8,17 +10,21 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
   --bg-main: #f3f4f6;
   --bg-surface: #ffffff;
+  --bg-panel: #ffffff;
   --bg-row: #f8fafc;
+  --bg-row-hover: #f1f5f9;
   --text-main: #111827;
   --text-muted: #6b7280;
   --border-subtle: #e5e7eb;
+  --border-strong: #d1d5db;
+  --accent: #2563eb;
+  --accent-soft: #eff6ff;
 }
 
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 html,
 body,
