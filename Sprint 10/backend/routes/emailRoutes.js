@@ -7,15 +7,18 @@ function emailRoutes(deps) {
   const router = express.Router();
   const controller = createEmailController(deps);
 
+  // Read
   router.get("/", controller.getEmails);
   router.get("/counts", controller.getFolderCounts);
   router.get("/:id", controller.getEmailById);
   router.get("/:id/thread", controller.getEmailThread);
 
-  router.post("/", controller.createEmail);
+  // Create
+  router.post("/", controller.sendEmail);
   router.post("/send", controller.sendEmail);
   router.post("/draft", controller.createDraft);
 
+  // Update
   router.patch("/:id", controller.updateEmail);
   router.patch("/:id/draft", controller.updateDraft);
   router.patch("/:id/move", controller.moveEmail);

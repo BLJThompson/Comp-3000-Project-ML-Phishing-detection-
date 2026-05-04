@@ -8,9 +8,11 @@ function devRoutes(deps) {
   const controller = createDevController(deps);
 
   router.post("/spawn-email", controller.spawnEmail);
-  router.post("/clear-inbox", controller.clearInbox);
+
+  // All clear routes use DELETE — they are destructive with no request body.
+  router.delete("/clear-inbox", controller.clearInbox);
   router.delete("/clear-flagged", controller.clearFlagged);
-  router.post("/clear-all", controller.clearAllEmails);
+  router.delete("/clear-all", controller.clearAllEmails);
 
   return router;
 }

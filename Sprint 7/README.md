@@ -78,20 +78,20 @@ The backend processes emails and returns:
 
 ```text
 backend/
-  ├── server.js
-  ├── db.js
-  ├── ai.js
-  ├── llm.js
-  ├── mail.db
-  ├── ml/
-  │   ├── predict_email.py
-  │   └── phish_model.joblib
-  ├── scripts/
-  │   └── import_ceas_08.js
-  └── tests/
+  ├-- server.js
+  ├-- db.js
+  ├-- ai.js
+  ├-- llm.js
+  ├-- mail.db
+  ├-- ml/
+  │   ├-- predict_email.py
+  │   └-- phish_model.joblib
+  ├-- scripts/
+  │   └-- import_ceas_08.js
+  └-- tests/
 
 frontend/
-  └── React application
+  └-- React application
 
 README.md
 ```

@@ -12,10 +12,6 @@ const GOOGLE_DIR = __dirname;
 const CREDENTIALS_PATH = path.join(GOOGLE_DIR, "credentials.json");
 const TOKEN_PATH = path.join(GOOGLE_DIR, "token.json");
 
-/* =========================================================
-   OAuth / authentication
-   ========================================================= */
-
 async function loadCredentials() {
   const content = await fs.readFile(CREDENTIALS_PATH, "utf8");
   const credentials = JSON.parse(content);

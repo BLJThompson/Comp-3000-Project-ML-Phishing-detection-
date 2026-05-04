@@ -2,6 +2,15 @@
 
 const { chooseIncomingFolderFromAI } = require("../emailRouting");
 
+/**
+ * Provides development and testing actions used while building the system.
+ *
+ * These routes are not part of a normal user email workflow. They make it easy
+ * to spawn sample phishing or benign emails from the local datasets, test AI
+ * routing behaviour, and clear local email data during repeated development
+ * runs.
+ */
+// Builds the development controller for test email generation and reset actions.
 function createDevController({
   db,
   classifyEmailWithAI,
@@ -13,6 +22,7 @@ function createDevController({
 
 
 return {
+    // Creates test emails from the datasets so the AI routing can be tested quickly.
     spawnEmail(req, res) {
       const body = req.body || {};
       let { type, count } = body;
@@ -31,6 +41,7 @@ return {
 
       const created = [];
 
+      // Picks one sample email, classifies it, and inserts it into the chosen folder.
       function spawnOnce(callback) {
         let thisType = mode;
 
@@ -102,6 +113,7 @@ return {
         });
       }
 
+      // Repeats the spawn process until the requested number of emails has been created.
       function runSpawn(index) {
         if (index >= n) {
           return res.status(201).json(created);
@@ -125,6 +137,7 @@ return {
       runSpawn(0);
     },
 
+    // Clears the Inbox to make repeated testing easier.
     clearInbox(req, res) {
       db.run("DELETE FROM emails WHERE folder = 'Inbox'", function (err) {
         if (err) {
@@ -136,6 +149,7 @@ return {
       });
     },
 
+    // Clears the Flagged folder during development testing.
     clearFlagged(req, res) {
       db.run("DELETE FROM emails WHERE folder = 'Flagged'", function (err) {
         if (err) {
@@ -149,6 +163,7 @@ return {
       });
     },
 
+    // Removes all local emails so the test database can be reset.
     clearAllEmails(req, res) {
       db.run("DELETE FROM emails", function (err) {
         if (err) {

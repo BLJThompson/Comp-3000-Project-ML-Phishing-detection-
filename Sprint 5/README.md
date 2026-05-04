@@ -58,30 +58,30 @@ The backend sends email content to the Python ML classifier which returns:
 
 Sprint 5
 │
-├── backend
-│ ├── server.js
-│ ├── db.js
-│ ├── ai.js
-│ ├── mail.db
+├-- backend
+│ ├-- server.js
+│ ├-- db.js
+│ ├-- ai.js
+│ ├-- mail.db
 │ │
-│ ├── data
-│ │ └── CEAS_08.csv
+│ ├-- data
+│ │ --- CEAS_08.csv
 │ │
-│ ├── ml
-│ │ ├── predict_email.py
-│ │ └── phish_model.joblib
+│ ├-- ml
+│ │ ├-- predict_email.py
+│ │ --- phish_model.joblib
 │ │
-│ ├── scripts
-│ │ └── import_ceas_08.js
+│ ├-- scripts
+│ │ --- import_ceas_08.js
 │ │
-│ └── tests
-│ ├── ai.test.js
-│ └── server.test.js
+│ --- tests
+│ ├-- ai.test.js
+│ --- server.test.js
 │
-├── frontend
-│ └── React application
+├-- frontend
+│ --- React application
 │
-└── README.md
+--- README.md
 
 
 ---

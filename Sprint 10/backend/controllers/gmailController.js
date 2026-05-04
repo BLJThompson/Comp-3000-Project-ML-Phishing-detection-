@@ -11,12 +11,24 @@ const {
 
 const { chooseIncomingFolderFromAI } = require("../emailRouting");
 
+
+/**
+ * Creates the controller responsible for Gmail OAuth, importing unread Gmail
+ * messages, and sending messages through the connected Gmail account.
+ *
+ * Imported Gmail messages are classified before storage. The classification
+ * result is then used to route messages into Inbox, Flagged, or Junk rather
+ * than placing every live email into the Inbox by default.
+ */
+
+// Creates the Gmail controller and injects the services it needs.
 function createGmailController({
   classifyEmailWithAI,
   insertEmail,
   mapEmailRow,
   getNowDateString,
 }) {
+  // Saves an email to the local database using async/await.
   function insertEmailAsync(emailData) {
     return new Promise((resolve, reject) => {
       insertEmail(emailData, (err, row) => {
@@ -26,6 +38,7 @@ function createGmailController({
     });
   }
 
+  // Classifies a Gmail email without stopping the full import if one check fails.
   async function classifySafely(email) {
     try {
       return await classifyEmailWithAI({
@@ -40,6 +53,7 @@ function createGmailController({
   }
 
   return {
+    // Generates the Google login URL used to connect Gmail.
     async getAuthUrl(req, res) {
       try {
         const url = await getAuthUrl();
@@ -53,6 +67,7 @@ function createGmailController({
       }
     },
 
+    // Saves the Google authorisation code after Gmail connection.
     async saveAuthCode(req, res) {
       try {
         const { code } = req.body || {};
@@ -78,6 +93,7 @@ function createGmailController({
       }
     },
 
+    // Imports unread Gmail messages, classifies them, and routes them into the correct folder.
     async importUnread(req, res) {
       try {
         const maxResultsRaw = Number(req.query.maxResults || req.body?.maxResults);
@@ -153,6 +169,7 @@ function createGmailController({
       }
     },
 
+    // Sends an email through Gmail and stores a sent copy locally.
     async sendViaGmail(req, res) {
       try {
         const {

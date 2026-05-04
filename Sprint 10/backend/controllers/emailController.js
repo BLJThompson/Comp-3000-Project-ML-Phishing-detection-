@@ -2,6 +2,16 @@
 
 const { chooseIncomingFolderFromAI } = require("../emailRouting");
 
+/**
+ * Handles the main local email workflow for the application.
+ *
+ * This controller loads emails, manages folders, creates drafts, sends local
+ * test emails, restores deleted messages, and keeps folder-specific flags in
+ * sync. Where email content enters the system, the AI result is stored with the
+ * email so the frontend can show the classification, score, findings, and
+ * explanation to the user.
+ */
+// Builds the main email controller using the database and AI services.
 function createEmailController({
   db,
   classifyEmailWithAI,
@@ -18,8 +28,9 @@ function createEmailController({
     "Junk",
   ];
 
-  const JUNK_SCORE_THRESHOLD = 0.9;
+  //  Database 
 
+  // Finds one email by its database ID.
   function getEmailRowById(id) {
     return new Promise((resolve, reject) => {
       db.get("SELECT * FROM emails WHERE id = ?", [id], (err, row) => {
@@ -29,6 +40,7 @@ function createEmailController({
     });
   }
 
+  // Finds all emails that belong to the same conversation thread.
   function getRowsByThreadId(threadId) {
     return new Promise((resolve, reject) => {
       db.all(
@@ -42,6 +54,7 @@ function createEmailController({
     });
   }
 
+  // Updates selected fields on one email record.
   function updateEmailRowById(id, fields, values) {
     return new Promise((resolve, reject) => {
       const sql = `UPDATE emails SET ${fields.join(
@@ -55,6 +68,7 @@ function createEmailController({
     });
   }
 
+  // Permanently removes one email from the database.
   function deleteEmailRowById(id) {
     return new Promise((resolve, reject) => {
       db.run("DELETE FROM emails WHERE id = ?", [id], function (err) {
@@ -64,6 +78,7 @@ function createEmailController({
     });
   }
 
+  // Runs a database query that returns multiple rows.
   function runAll(sql, params = []) {
     return new Promise((resolve, reject) => {
       db.all(sql, params, (err, rows) => {
@@ -73,6 +88,7 @@ function createEmailController({
     });
   }
 
+  // Runs a database query that returns one row.
   function runGet(sql, params = []) {
     return new Promise((resolve, reject) => {
       db.get(sql, params, (err, row) => {
@@ -82,6 +98,7 @@ function createEmailController({
     });
   }
 
+  // Promisifies the insertEmail callback so it can be awaited.
   function insertEmailAsync(emailData) {
     return new Promise((resolve, reject) => {
       insertEmail(emailData, (err, row) => {
@@ -91,6 +108,9 @@ function createEmailController({
     });
   }
 
+  //  Shared functions 
+
+  // Reloads an email after a change and sends it back to the frontend.
   async function returnEmailById(id, res) {
     const row = await getEmailRowById(id);
 
@@ -101,25 +121,112 @@ function createEmailController({
     return res.json(mapEmailRow(row));
   }
 
+  // Creates a simple unique thread ID for new conversations.
   function makeThreadId(seed = "new") {
     return `thread-${seed}-${Date.now()}`;
   }
 
+  // Runs AI classification, but returns null if the model check fails.
   async function buildAIResult({ sender, subject, body }) {
     try {
-      return await classifyEmailWithAI({
-        sender,
-        subject,
-        body: body || "",
-      });
+      return await classifyEmailWithAI({ sender, subject, body: body || "" });
     } catch (err) {
       console.error("AI classification failed:", err);
       return null;
     }
   }
 
+  /**
+   * Returns the folder-specific flag fields and values for a target folder.
+   * Centralises the isFlagged / isJunk / isDraft / deletedFromFolder logic
+   * that was previously duplicated across moveEmail, restoreEmail, and updateEmail.
+   *
+   * @param {string} targetFolder - The folder being moved into.
+   * @param {string|null} [previousFolder] - The folder the email is leaving
+   *   (only needed when targetFolder === "Deleted" to record deletedFromFolder).
+   * @returns {{ fields: string[], values: any[] }}
+   */
+  function getFolderFlags(targetFolder, previousFolder = null) {
+    const fields = [];
+    const values = [];
 
-return {
+    // Track where a deleted email came from so it can be restored later.
+    fields.push("deletedFromFolder = ?");
+    values.push(targetFolder === "Deleted" ? previousFolder || "Inbox" : null);
+
+    // Mutually exclusive flag pair: only one of Flagged / Junk can be active.
+    if (targetFolder === "Flagged") {
+      fields.push("isFlagged = ?", "isJunk = ?");
+      values.push(1, 0);
+    } else if (targetFolder === "Junk") {
+      fields.push("isJunk = ?", "isFlagged = ?");
+      values.push(1, 0);
+    } else {
+      fields.push("isFlagged = ?", "isJunk = ?");
+      values.push(0, 0);
+    }
+
+    // isDraft is only true inside the Drafts folder.
+    fields.push("isDraft = ?");
+    values.push(targetFolder === "Drafts" ? 1 : 0);
+
+    return { fields, values };
+  }
+
+  /**
+   * Builds a base email insert payload with sensible defaults, then merges in
+   * the provided overrides. Avoids repeating the full field list for every
+   * insertEmailAsync call.
+   *
+   * @param {object} overrides - Any fields that differ from the defaults.
+   * @returns {object}
+   */
+  function buildEmailData(overrides) {
+    return {
+      folder: "Inbox",
+      sender: "",
+      toRecipients: "",
+      ccRecipients: "",
+      bccRecipients: "",
+      subject: "",
+      body: "",
+      date: getNowDateString(),
+      groupLabel: "Today",
+      isUnread: false,
+      isFlagged: false,
+      isPinned: false,
+      isDraft: false,
+      isJunk: false,
+      deletedFromFolder: null,
+      replyToId: null,
+      threadId: null,
+      urls: 0,
+      groundTruthLabel: null,
+      sourceDataset: null,
+      aiLabel: null,
+      aiScore: null,
+      aiModel: null,
+      aiExplanation: null,
+      findings: [],
+      ...overrides,
+    };
+  }
+
+  // Converts an aiResult object into the AI-specific fields used by buildEmailData.
+  function aiFields(aiResult) {
+    return {
+      aiLabel: aiResult?.aiLabel || null,
+      aiScore: aiResult?.aiScore ?? null,
+      aiModel: aiResult?.aiModel || null,
+      aiExplanation: aiResult?.aiExplanation || null,
+      findings: aiResult?.findings || [],
+    };
+  }
+
+  //  Controller 
+
+  return {
+    // Loads emails from a folder and applies the search filter when one is provided.
     async getEmails(req, res) {
       try {
         const folder = req.query.folder || "Inbox";
@@ -145,30 +252,35 @@ return {
       }
     },
 
+    // Counts emails by folder and AI label for the sidebar and dashboard.
     async getFolderCounts(req, res) {
       try {
-        const folders = ["Inbox", "Drafts", "Sent", "Deleted", "Flagged", "Junk"];
-        const counts = {};
+        // Run all folder counts in parallel.
+        const folderRows = await Promise.all(
+          VALID_FOLDERS.map((folder) =>
+            runGet("SELECT COUNT(*) as count FROM emails WHERE folder = ?", [
+              folder,
+            ])
+          )
+        );
 
-        for (const folder of folders) {
-          const row = await runGet(
-            "SELECT COUNT(*) as count FROM emails WHERE folder = ?",
-            [folder]
-          );
-          counts[folder] = row?.count || 0;
-        }
+        const counts = Object.fromEntries(
+          VALID_FOLDERS.map((folder, i) => [folder, folderRows[i]?.count || 0])
+        );
 
-        const totalRow = await runGet("SELECT COUNT(*) as count FROM emails");
+        // Fetch the remaining aggregate counts in parallel.
+        const [totalRow, phishingRow, benignRow] = await Promise.all([
+          runGet("SELECT COUNT(*) as count FROM emails"),
+          runGet(
+            "SELECT COUNT(*) as count FROM emails WHERE aiLabel = 'phishing'"
+          ),
+          runGet(
+            "SELECT COUNT(*) as count FROM emails WHERE aiLabel = 'benign'"
+          ),
+        ]);
+
         counts.Total = totalRow?.count || 0;
-
-        const phishingRow = await runGet(
-          "SELECT COUNT(*) as count FROM emails WHERE aiLabel = 'phishing'"
-        );
         counts.Phishing = phishingRow?.count || 0;
-
-        const benignRow = await runGet(
-          "SELECT COUNT(*) as count FROM emails WHERE aiLabel = 'benign'"
-        );
         counts.Benign = benignRow?.count || 0;
 
         res.json(counts);
@@ -178,6 +290,7 @@ return {
       }
     },
 
+    // Loads the full details for one selected email.
     async getEmailById(req, res) {
       try {
         const row = await getEmailRowById(req.params.id);
@@ -193,6 +306,7 @@ return {
       }
     },
 
+    // Loads the conversation thread for the selected email.
     async getEmailThread(req, res) {
       try {
         const email = await getEmailRowById(req.params.id);
@@ -213,10 +327,12 @@ return {
       }
     },
 
+    // Alias kept so the router can call either createEmail or sendEmail.
     async createEmail(req, res) {
       return this.sendEmail(req, res);
     },
 
+    // Sends a local email, classifies it, and creates both sent and received copies.
     async sendEmail(req, res) {
       try {
         const {
@@ -238,71 +354,41 @@ return {
 
         const outgoingThreadId = threadId || makeThreadId("new");
 
-const aiResult = await buildAIResult({
-  sender,
-  subject,
-  body,
-});
+        const aiResult = await buildAIResult({ sender, subject, body });
+        const incomingDecision = chooseIncomingFolderFromAI(aiResult);
 
-// Sent copy
-const sentRow = await insertEmailAsync({
-  folder: "Sent",
-  sender,
-  toRecipients,
-  ccRecipients: ccRecipients || "",
-  bccRecipients: bccRecipients || "",
-  subject,
-  body: body || "",
-  date: getNowDateString(),
-  groupLabel: "Today",
-  isUnread: false,
-  isFlagged: false,
-  isPinned: false,
-  isDraft: false,
-  isJunk: false,
-  deletedFromFolder: null,
-  replyToId: replyToId || null,
-  threadId: outgoingThreadId,
-  urls: 0,
-  groundTruthLabel: null,
-  sourceDataset: null,
-  aiLabel: aiResult?.aiLabel || null,
-  aiScore: aiResult?.aiScore ?? null,
-  aiModel: aiResult?.aiModel || null,
-  aiExplanation: aiResult?.aiExplanation || null,
-  findings: aiResult?.findings || [],
-});
+        // Shared fields for both the sent and received copies.
+        const sharedFields = {
+          sender,
+          toRecipients,
+          ccRecipients: ccRecipients || "",
+          bccRecipients: bccRecipients || "",
+          subject,
+          body: body || "",
+          replyToId: replyToId || null,
+          threadId: outgoingThreadId,
+          ...aiFields(aiResult),
+        };
 
-const incomingDecision = chooseIncomingFolderFromAI(aiResult);
-
-// Local received copy
-await insertEmailAsync({
-  folder: incomingDecision.folder,
-  sender,
-  toRecipients,
-  ccRecipients: ccRecipients || "",
-  bccRecipients: bccRecipients || "",
-  subject,
-  body: body || "",
-  date: getNowDateString(),
-  groupLabel: "Today",
-  isUnread: true,
-  isFlagged: incomingDecision.isFlagged,
-  isPinned: false,
-  isDraft: false,
-  isJunk: incomingDecision.isJunk,
-  deletedFromFolder: null,
-  replyToId: replyToId || null,
-  threadId: outgoingThreadId,
-  urls: 0,
-  groundTruthLabel: null,
-  sourceDataset: null,
-  aiLabel: aiResult?.aiLabel || null,
-  aiScore: aiResult?.aiScore ?? null,
-  aiModel: aiResult?.aiModel || null,
-  aiExplanation: aiResult?.aiExplanation || null,
-  findings: aiResult?.findings || [],
-});
+        // Insert both copies concurrently.
+        const [sentRow] = await Promise.all([
+          insertEmailAsync(
+            buildEmailData({
+              ...sharedFields,
+              folder: "Sent",
+              isUnread: false,
+            })
+          ),
+          insertEmailAsync(
+            buildEmailData({
+              ...sharedFields,
+              folder: incomingDecision.folder,
+              isUnread: true,
+              isFlagged: incomingDecision.isFlagged,
+              isJunk: incomingDecision.isJunk,
+            })
+          ),
+        ]);
 
         res.status(201).json(mapEmailRow(sentRow));
       } catch (err) {
@@ -311,7 +397,8 @@ await insertEmailAsync({
       }
     },
 
-    createDraft(req, res) {
+    // Saves an unfinished email so the user can return to it later.
+    async createDraft(req, res) {
       try {
         const {
           sender,
@@ -324,8 +411,8 @@ await insertEmailAsync({
           threadId,
         } = req.body || {};
 
-        insertEmail(
-          {
+        const row = await insertEmailAsync(
+          buildEmailData({
             folder: "Drafts",
             sender: sender || "ben@example.com",
             toRecipients: toRecipients || "",
@@ -333,40 +420,20 @@ await insertEmailAsync({
             bccRecipients: bccRecipients || "",
             subject: subject || "",
             body: body || "",
-            date: getNowDateString(),
-            groupLabel: "Today",
-            isUnread: false,
-            isFlagged: false,
-            isPinned: false,
             isDraft: true,
-            isJunk: false,
-            deletedFromFolder: null,
             replyToId: replyToId || null,
             threadId: threadId || makeThreadId("draft"),
-            urls: 0,
-            groundTruthLabel: null,
-            sourceDataset: null,
-            aiLabel: null,
-            aiScore: null,
-            aiModel: null,
-            aiExplanation: null,
-            findings: [],
-          },
-          (err, row) => {
-            if (err) {
-              console.error("Error creating draft:", err);
-              return res.status(500).json({ error: "Failed to create draft" });
-            }
-
-            res.status(201).json(mapEmailRow(row));
-          }
+          })
         );
+
+        res.status(201).json(mapEmailRow(row));
       } catch (err) {
-        console.error("Unexpected error creating draft:", err);
+        console.error("Error creating draft:", err);
         res.status(500).json({ error: "Failed to create draft" });
       }
     },
 
+    // Updates a saved draft while blocking edits to non-draft emails.
     async updateDraft(req, res) {
       try {
         const id = req.params.id;
@@ -380,14 +447,8 @@ await insertEmailAsync({
           return res.status(400).json({ error: "Only drafts can be updated" });
         }
 
-        const {
-          sender,
-          toRecipients,
-          ccRecipients,
-          bccRecipients,
-          subject,
-          body,
-        } = req.body || {};
+        const { sender, toRecipients, ccRecipients, bccRecipients, subject, body } =
+          req.body || {};
 
         const fields = [
           "sender = ?",
@@ -419,106 +480,60 @@ await insertEmailAsync({
       }
     },
 
-    updateEmail(req, res) {
-      const id = req.params.id;
-      const { isUnread, isFlagged, isPinned, folder } = req.body || {};
+    // Updates simple email states such as unread, pinned, flagged, or folder.
+    async updateEmail(req, res) {
+      try {
+        const id = req.params.id;
+        const { isUnread, isFlagged, isPinned, folder } = req.body || {};
 
-      const fields = [];
-      const params = [];
+        const fields = [];
+        const values = [];
 
-      if (typeof isUnread === "boolean") {
-        fields.push("isUnread = ?");
-        params.push(isUnread ? 1 : 0);
-      }
-
-      if (typeof isPinned === "boolean") {
-        fields.push("isPinned = ?");
-        params.push(isPinned ? 1 : 0);
-      }
-
-      if (typeof isFlagged === "boolean") {
-        fields.push("isFlagged = ?");
-        params.push(isFlagged ? 1 : 0);
-
-        if (isFlagged) {
-          fields.push("folder = ?");
-          params.push("Flagged");
-          fields.push("isJunk = ?");
-          params.push(0);
-        } else {
-          fields.push("folder = ?");
-          params.push("Inbox");
-          fields.push("isJunk = ?");
-          params.push(0);
-        }
-      } else if (typeof folder === "string" && folder.trim()) {
-        const trimmedFolder = folder.trim();
-
-        if (!VALID_FOLDERS.includes(trimmedFolder)) {
-          return res.status(400).json({ error: "Invalid folder" });
+        if (typeof isUnread === "boolean") {
+          fields.push("isUnread = ?");
+          values.push(isUnread ? 1 : 0);
         }
 
-        fields.push("folder = ?");
-        params.push(trimmedFolder);
-
-        if (trimmedFolder === "Flagged") {
-          fields.push("isFlagged = ?");
-          params.push(1);
-          fields.push("isJunk = ?");
-          params.push(0);
-        } else if (trimmedFolder === "Junk") {
-          fields.push("isJunk = ?");
-          params.push(1);
-          fields.push("isFlagged = ?");
-          params.push(0);
-        } else {
-          fields.push("isFlagged = ?");
-          params.push(0);
-          fields.push("isJunk = ?");
-          params.push(0);
+        if (typeof isPinned === "boolean") {
+          fields.push("isPinned = ?");
+          values.push(isPinned ? 1 : 0);
         }
 
-        if (trimmedFolder === "Drafts") {
-          fields.push("isDraft = ?");
-          params.push(1);
-        } else {
-          fields.push("isDraft = ?");
-          params.push(0);
-        }
-      }
+        if (typeof isFlagged === "boolean") {
+          // Toggling the flag also moves the email to/from the Flagged folder.
+          const targetFolder = isFlagged ? "Flagged" : "Inbox";
+          const { fields: flagFields, values: flagValues } =
+            getFolderFlags(targetFolder);
 
-      if (!fields.length) {
-        return res.status(400).json({ error: "No valid fields provided" });
-      }
+          fields.push("folder = ?", ...flagFields);
+          values.push(targetFolder, ...flagValues);
+        } else if (typeof folder === "string" && folder.trim()) {
+          const targetFolder = folder.trim();
 
-      const sql = `UPDATE emails SET ${fields.join(
-        ", "
-      )}, updatedAt = CURRENT_TIMESTAMP WHERE id = ?`;
-      params.push(id);
-
-      db.run(sql, params, function (err) {
-        if (err) {
-          console.error("Error updating email:", err);
-          return res.status(500).json({ error: "Failed to update email" });
-        }
-
-        db.get("SELECT * FROM emails WHERE id = ?", [id], (err2, row) => {
-          if (err2) {
-            console.error("Error fetching updated email:", err2);
-            return res
-              .status(500)
-              .json({ error: "Email updated but fetch failed" });
+          if (!VALID_FOLDERS.includes(targetFolder)) {
+            return res.status(400).json({ error: "Invalid folder" });
           }
 
-          if (!row) {
-            return res.status(404).json({ error: "Email not found" });
-          }
+          const { fields: flagFields, values: flagValues } =
+            getFolderFlags(targetFolder);
 
-          res.json(mapEmailRow(row));
-        });
-      });
+          fields.push("folder = ?", ...flagFields);
+          values.push(targetFolder, ...flagValues);
+        }
+
+        if (!fields.length) {
+          return res.status(400).json({ error: "No valid fields provided" });
+        }
+
+        await updateEmailRowById(id, fields, values);
+        return returnEmailById(id, res);
+      } catch (err) {
+        console.error("Error updating email:", err);
+        return res.status(500).json({ error: "Failed to update email" });
+      }
     },
 
+    // Moves an email to another folder and keeps the related flags consistent.
     async moveEmail(req, res) {
       try {
         const id = req.params.id;
@@ -540,43 +555,17 @@ await insertEmailAsync({
           return res.status(404).json({ error: "Email not found" });
         }
 
-        const fields = ["folder = ?"];
-        const values = [targetFolder];
+        const { fields, values } = getFolderFlags(
+          targetFolder,
+          email.folder || "Inbox"
+        );
 
-        if (targetFolder === "Deleted") {
-          fields.push("deletedFromFolder = ?");
-          values.push(email.folder || "Inbox");
-        } else {
-          fields.push("deletedFromFolder = ?");
-          values.push(null);
-        }
+        await updateEmailRowById(
+          id,
+          ["folder = ?", ...fields],
+          [targetFolder, ...values]
+        );
 
-        if (targetFolder === "Flagged") {
-          fields.push("isFlagged = ?");
-          values.push(1);
-          fields.push("isJunk = ?");
-          values.push(0);
-        } else if (targetFolder === "Junk") {
-          fields.push("isJunk = ?");
-          values.push(1);
-          fields.push("isFlagged = ?");
-          values.push(0);
-        } else {
-          fields.push("isFlagged = ?");
-          values.push(0);
-          fields.push("isJunk = ?");
-          values.push(0);
-        }
-
-        if (targetFolder === "Drafts") {
-          fields.push("isDraft = ?");
-          values.push(1);
-        } else {
-          fields.push("isDraft = ?");
-          values.push(0);
-        }
-
-        await updateEmailRowById(id, fields, values);
         return returnEmailById(id, res);
       } catch (err) {
         console.error("Error moving email:", err);
@@ -584,6 +573,7 @@ await insertEmailAsync({
       }
     },
 
+    // Moves an email to Deleted, or deletes it permanently if it is already there.
     async deleteEmail(req, res) {
       try {
         const id = req.params.id;
@@ -593,28 +583,21 @@ await insertEmailAsync({
           return res.status(404).json({ error: "Email not found" });
         }
 
-        // Permanently delete if already in Deleted
+        // Permanently delete if already in Deleted.
         if (email.folder === "Deleted") {
           await deleteEmailRowById(id);
-          return res.json({
-            success: true,
-            deletedPermanently: true,
-            id: Number(id),
-          });
+          return res.json({ success: true, deletedPermanently: true, id: Number(id) });
         }
 
-        const currentFolder = email.folder || "Inbox";
+        const { fields, values } = getFolderFlags(
+          "Deleted",
+          email.folder || "Inbox"
+        );
 
         await updateEmailRowById(
           id,
-          [
-            "folder = ?",
-            "deletedFromFolder = ?",
-            "isFlagged = ?",
-            "isJunk = ?",
-            "isDraft = ?",
-          ],
-          ["Deleted", currentFolder, 0, 0, 0]
+          ["folder = ?", ...fields],
+          ["Deleted", ...values]
         );
 
         return returnEmailById(id, res);
@@ -624,6 +607,7 @@ await insertEmailAsync({
       }
     },
 
+    // Restores a deleted email back to the folder it came from.
     async restoreEmail(req, res) {
       try {
         const id = req.params.id;
@@ -641,35 +625,14 @@ await insertEmailAsync({
 
         const restoreFolder = email.deletedFromFolder || "Inbox";
 
-        const fields = ["folder = ?", "deletedFromFolder = ?"];
-        const values = [restoreFolder, null];
+        const { fields, values } = getFolderFlags(restoreFolder);
 
-        if (restoreFolder === "Flagged") {
-          fields.push("isFlagged = ?");
-          values.push(1);
-          fields.push("isJunk = ?");
-          values.push(0);
-        } else if (restoreFolder === "Junk") {
-          fields.push("isJunk = ?");
-          values.push(1);
-          fields.push("isFlagged = ?");
-          values.push(0);
-        } else {
-          fields.push("isFlagged = ?");
-          values.push(0);
-          fields.push("isJunk = ?");
-          values.push(0);
-        }
+        await updateEmailRowById(
+          id,
+          ["folder = ?", ...fields],
+          [restoreFolder, ...values]
+        );
 
-        if (restoreFolder === "Drafts") {
-          fields.push("isDraft = ?");
-          values.push(1);
-        } else {
-          fields.push("isDraft = ?");
-          values.push(0);
-        }
-
-        await updateEmailRowById(id, fields, values);
         return returnEmailById(id, res);
       } catch (err) {
         console.error("Error restoring email:", err);

@@ -48,26 +48,26 @@ viewer.
 
 Sprint 6
 │
-├── backend
-│   ├── server.js
-│   ├── db.js
-│   ├── ai.js
-│   ├── mail.db
+├-- backend
+│   ├-- server.js
+│   ├-- db.js
+│   ├-- ai.js
+│   ├-- mail.db
 │
-│   ├── ml
-│   │   ├── predict_email.py
-│   │   └── phish_model.joblib
+│   ├-- ml
+│   │   ├-- predict_email.py
+│   │   └-- phish_model.joblib
 │
-│   ├── scripts
-│   │   └── import_ceas_08.js
+│   ├-- scripts
+│   │   └-- import_ceas_08.js
 │
-│   └── tests
-│       ├── ai.test.js
-│       └── server.test.js
+│   └-- tests
+│       ├-- ai.test.js
+│       └-- server.test.js
 │
-├── frontend
+├-- frontend
 │
-└── README.md
+└-- README.md
 
 ------------------------------------------------------------------------
 

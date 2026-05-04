@@ -1,3 +1,5 @@
+# backend/ml/evaluate_validation.py
+
 import os
 import sys
 import joblib
@@ -12,47 +14,39 @@ from sklearn.metrics import (
     classification_report,
 )
 
-from ml.utils import TextCleaner, map_label  # noqa: F401
+from ml.utils import TextCleaner, map_label, VALIDATION_SPLIT_PATH  # noqa: F401
 
 THIS_DIR = os.path.dirname(__file__)
-DEFAULT_VALIDATION_PATH = os.path.join(THIS_DIR, "..", "data", "validation_split_combined.csv")
 
+# Only the SVM model is in use — logreg and rf have been removed.
 MODEL_MAP = {
     "svm": os.path.join(THIS_DIR, "phish_model_svm_combined_cv.joblib"),
-    "logreg": os.path.join(THIS_DIR, "phish_model_logreg_combined_cv.joblib"),
-    "rf": os.path.join(THIS_DIR, "phish_model_rf_combined_cv.joblib"),
 }
 
 
-def find_text_column(df):
-    for col in ["Email Text", "email_text", "text", "body", "message", "content"]:
+def find_column(df, candidates, field_name):
+    """Returns the first matching column from candidates, or raises a clear error."""
+    for col in candidates:
         if col in df.columns:
             return col
-    raise ValueError(f"No text column found. Columns: {list(df.columns)}")
-
-
-def find_label_column(df):
-    for col in ["Email Type", "email_type", "label", "Label", "type", "class"]:
-        if col in df.columns:
-            return col
-    raise ValueError(f"No label column found. Columns: {list(df.columns)}")
+    raise ValueError(f"No {field_name} column found. Columns: {list(df.columns)}")
 
 
 def load_validation_data(path):
     print(f"[INFO] Loading validation dataset from: {path}")
     df = pd.read_csv(path)
 
-    text_col = find_text_column(df)
-    label_col = find_label_column(df)
+    text_col  = find_column(df, ["Email Text", "email_text", "text", "body", "message", "content"], "text")
+    label_col = find_column(df, ["Email Type", "email_type", "label", "Label", "type", "class"], "label")
 
     X_val = df[text_col].fillna("").astype(str).str.strip().to_frame(name="text")
     y_val = df[label_col].apply(map_label)
 
     if y_val.isnull().any():
-        bad_values = df.loc[y_val.isnull(), label_col].unique()
-        raise ValueError(f"Unexpected label values found: {bad_values}")
+        bad = df.loc[y_val.isnull(), label_col].unique()
+        raise ValueError(f"Unexpected label values found: {bad}")
 
-    mask = X_val["text"] != ""
+    mask  = X_val["text"] != ""
     X_val = X_val[mask]
     y_val = y_val[mask].astype(int)
 
@@ -65,8 +59,8 @@ def evaluate_one(model_path, validation_path):
 
     X_val, y_val, text_col, label_col = load_validation_data(validation_path)
 
-    print(f"[INFO] Text column used: {text_col}")
-    print(f"[INFO] Label column used: {label_col}")
+    print(f"[INFO] Text column: {text_col}")
+    print(f"[INFO] Label column: {label_col}")
     print(f"[INFO] Validation samples: {len(X_val)}")
     print(f"[INFO] Safe emails: {(y_val == 0).sum()}")
     print(f"[INFO] Phishing emails: {(y_val == 1).sum()}")
@@ -87,23 +81,11 @@ def evaluate_one(model_path, validation_path):
 
 
 def main():
-    validation_path = DEFAULT_VALIDATION_PATH
-
-    if len(sys.argv) >= 2 and sys.argv[1] == "all":
-        if len(sys.argv) >= 3:
-            validation_path = sys.argv[2]
-
-        for name, model_path in MODEL_MAP.items():
-            print(f"\n================ {name.upper()} ================")
-            evaluate_one(model_path, validation_path)
-        return
-
-    model_path = MODEL_MAP["svm"]
+    validation_path = VALIDATION_SPLIT_PATH
+    model_path      = MODEL_MAP["svm"]
 
     if len(sys.argv) >= 2:
-        arg = sys.argv[1]
-        model_path = MODEL_MAP.get(arg, arg)
-
+        model_path = MODEL_MAP.get(sys.argv[1], sys.argv[1])
     if len(sys.argv) >= 3:
         validation_path = sys.argv[2]
 

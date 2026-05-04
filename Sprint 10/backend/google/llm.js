@@ -1,75 +1,59 @@
+// backend/google/llm.js
+
 require("dotenv").config();
 const { GoogleGenAI } = require("@google/genai");
 
 const apiKey = process.env.GEMINI_API_KEY || "";
 
-const client = apiKey
-  ? new GoogleGenAI({ apiKey })
-  : null;
+// client is null when no API key is set — callers receive null and fall back gracefully.
+const client = apiKey ? new GoogleGenAI({ apiKey }) : null;
+
+const MAX_BODY_LENGTH = 4000;
+const MAX_FINDINGS    = 8;
+
+//  Prompt utilities 
 
 function safeString(value) {
   return typeof value === "string" ? value : value == null ? "" : String(value);
 }
 
-function truncateText(text, maxLength = 4000) {
+function truncateText(text, maxLength = MAX_BODY_LENGTH) {
   const value = safeString(text).trim();
   if (value.length <= maxLength) return value;
   return `${value.slice(0, maxLength)}\n\n[truncated]`;
 }
 
+// Maps a numeric score to a plain-language confidence band for the prompt.
+function getConfidenceBand(aiScore) {
+  if (typeof aiScore !== "number" || !Number.isFinite(aiScore)) return "unknown";
+  if (aiScore >= 0.9) return "high";
+  if (aiScore >= 0.7) return "medium";
+  return "low";
+}
+
+// Formats the findings array into a numbered list for the prompt.
 function formatFindings(findings) {
   if (!Array.isArray(findings) || findings.length === 0) {
     return "No structured findings were extracted.";
   }
 
   return findings
-    .slice(0, 8)
-    .map((f, index) => {
-      const type = safeString(f.type);
-      const severity = safeString(f.severity);
-      const reason = safeString(f.reason);
+    .slice(0, MAX_FINDINGS)
+    .map((f, i) => {
       const text = safeString(f.text);
-
-      return `${index + 1}. type=${type}; severity=${severity}; reason=${reason}${
-        text ? `; text=${text}` : ""
-      }`;
+      return `${i + 1}. type=${safeString(f.type)}; severity=${safeString(f.severity)}; reason=${safeString(f.reason)}${text ? `; text=${text}` : ""}`;
     })
     .join("\n");
 }
 
-function getConfidenceBand(aiScore) {
-  if (typeof aiScore !== "number" || !Number.isFinite(aiScore)) {
-    return "unknown";
-  }
-  if (aiScore >= 0.9) return "high";
-  if (aiScore >= 0.7) return "medium";
-  return "low";
-}
-
-async function explainPhishingEmail({
-  sender,
-  subject,
-  body,
-  aiLabel,
-  aiScore,
-  findings,
-}) {
-  if (!client) {
-    return null;
-  }
-
-  const cleanSender = safeString(sender);
-  const cleanSubject = safeString(subject);
-  const cleanBody = truncateText(body, 4000);
-  const cleanLabel = safeString(aiLabel);
+// Builds the prompt sent to Gemini.
+function buildPrompt({ sender, subject, body, aiLabel, aiScore, findings }) {
   const cleanScore =
     typeof aiScore === "number" && Number.isFinite(aiScore)
       ? aiScore.toFixed(3)
       : "unknown";
-  const confidenceBand = getConfidenceBand(aiScore);
-  const findingSummary = formatFindings(findings);
 
-  const prompt = `
+  return `
 You are explaining an email safety result to a normal non-technical user.
 
 Write a short email summary and then a short safety explanation for the email below.
@@ -87,20 +71,30 @@ Rules:
 - If the email appears benign, say it appears safe unless there are meaningful warning signs.
 
 Email details:
-Sender: ${cleanSender || "[empty]"}
-Subject: ${cleanSubject || "[empty]"}
+Sender: ${safeString(sender) || "[empty]"}
+Subject: ${safeString(subject) || "[empty]"}
 Body:
-${cleanBody || "[empty]"}
+${truncateText(body) || "[empty]"}
 
 System result:
-Label: ${cleanLabel}
-Confidence band: ${confidenceBand}
+Label: ${safeString(aiLabel)}
+Confidence band: ${getConfidenceBand(aiScore)}
 
 Detected findings:
-${findingSummary}
+${formatFindings(findings)}
 
 Return only the Summary and Explanation lines.
 `.trim();
+}
+
+//  Public API 
+
+// Calls Gemini to generate a user-facing summary and explanation for a phishing email.
+// Returns null if the client is not configured or if the API call fails.
+async function explainPhishingEmail({ sender, subject, body, aiLabel, aiScore, findings }) {
+  if (!client) return null;
+
+  const prompt = buildPrompt({ sender, subject, body, aiLabel, aiScore, findings });
 
   try {
     const response = await client.models.generateContent({
@@ -108,10 +102,9 @@ Return only the Summary and Explanation lines.
       contents: prompt,
     });
 
-    const text = response?.text?.trim();
-    return text || null;
-  } catch (error) {
-    console.error("Gemini explanation error:", error?.message || error);
+    return response?.text?.trim() || null;
+  } catch (err) {
+    console.error("Gemini explanation error:", err?.message || err);
     return null;
   }
 }
